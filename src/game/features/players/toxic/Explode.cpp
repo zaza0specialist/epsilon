@@ -9,7 +9,8 @@ namespace YimMenu::Features
 
 		virtual void OnCall(Player player) override
 		{
-			player.GetPed().Explode(ExplosionType::ORBITAL_CANNON, 900.f);
+			if (auto ped = player.GetPed())
+				ped.Explode(ExplosionType::ORBITAL_CANNON, 900.f);
 		}
 	};
 
