@@ -98,4 +98,10 @@ namespace YimMenu::Hooks
 	{
 		extern bool AssistedAimShouldReleaseEntity(__int64 a1);
 	}
+
+	namespace ShopBackend
+	{
+		extern bool CheckoutStart(void* a1, unsigned int txnId);
+		extern std::uint64_t Rewriter(void* ctx, std::uint32_t a2, std::uint32_t a3, std::uint32_t a4, void* payload);
+	}
 }

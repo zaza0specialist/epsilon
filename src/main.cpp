@@ -26,6 +26,7 @@
 #include "game/features/vehicle/SavePersonalVehicle.hpp"
 #include "game/features/self/OpenGunLocker.hpp"
 #include "game/features/recovery/DailyActivities.hpp"
+#include "game/features/recovery/PhoneFreeShopping.hpp"
 
 namespace YimMenu
 {
@@ -78,6 +79,7 @@ namespace YimMenu
 		ScriptMgr::AddScript(std::make_unique<Script>(&LuaManager::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&HotkeySystem::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Commands::RunScript));
+		ScriptMgr::AddScript(std::make_unique<Script>(&Features::PhoneFreeShopping::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Features::SavePersonalVehicle::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Features::OpenGunLocker::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Features::OpenStreetDealerMenu::RunScript));
