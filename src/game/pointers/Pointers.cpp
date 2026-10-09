@@ -438,44 +438,6 @@ namespace YimMenu
 			return false;
 		}
 
-		auto gameBase = gta5->Base();
-		// Preferred: pattern-scan reconstructed from clean prologues (diag session)
-		// + dump bytes after MinHook E9. Fallback: Enhanced RVAs from live dump.
-		//   Rewriter      abs 0x7FF6988B0620 -> RVA 0x14D0620
-		//   CheckoutStart abs 0x7FF69CE27CA1 -> RVA 0x5A47CA1
-		ShopCheckoutStartTarget = reinterpret_cast<PVOID>(gameBase + 0x5A47CA1);
-		ShopRewriterTarget      = reinterpret_cast<PVOID>(gameBase + 0x14D0620);
-
-		{
-			auto shopScanner = PatternScanner(gta5);
-			bool checkoutFromPattern = false;
-			bool rewriterFromPattern = false;
-
-			// Checkout: push rsi; push rdi; push rbx; sub rsp,30h; mov edx,ebx; mov rdi,rcx; lea rsi,[rcx+70h]; mov rcx,rsi
-			static constexpr auto shopCheckoutPtrn =
-			    Pattern<"56 57 53 48 83 EC 30 89 D3 48 89 CF 48 8D 71 70 48 89 F1">("ShopCheckoutStart");
-			shopScanner.Add(shopCheckoutPtrn, [this, &checkoutFromPattern](PointerCalculator ptr) {
-				ShopCheckoutStartTarget = ptr.As<PVOID>();
-				checkoutFromPattern     = true;
-			});
-
-			// Rewriter: push rsi; push rdi; push rbp; push rbx; sub rsp,58h; test edx,edx; jz; xor eax,eax; epilogue; ret
-			static constexpr auto shopRewriterPtrn =
-			    Pattern<"56 57 55 53 48 83 EC 58 85 D2 74 0B 31 C0 48 83 C4 58 5B 5D 5F 5E C3">("ShopRewriter");
-			shopScanner.Add(shopRewriterPtrn, [this, &rewriterFromPattern](PointerCalculator ptr) {
-				ShopRewriterTarget = ptr.As<PVOID>();
-				rewriterFromPattern = true;
-			});
-
-			// Soft scan: missing shop patterns must not unload the menu.
-			shopScanner.Scan();
-			LOG(INFO) << "Shop pattern scan: checkout=" << (checkoutFromPattern ? "PATTERN" : "RVA-fallback")
-			          << " rewriter=" << (rewriterFromPattern ? "PATTERN" : "RVA-fallback");
-		}
-
-		LOG(INFO) << "ShopCheckoutStartTarget: " << ShopCheckoutStartTarget;
-		LOG(INFO) << "ShopRewriterTarget: " << ShopRewriterTarget;
-
 		PatternCache::Update();
 		return true;
 	}

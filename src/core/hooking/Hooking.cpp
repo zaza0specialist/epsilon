@@ -6,8 +6,6 @@
 #include "game/hooks/Hooks.hpp"
 #include "game/pointers/Pointers.hpp"
 
-#include <cstdio>
-
 namespace YimMenu
 {
 	Hooking::Hooking()
@@ -47,29 +45,6 @@ namespace YimMenu
 		BaseHook::Add<Hooks::Matchmaking::MatchmakingUpdate>(new DetourHook("MatchmakingUpdate", Pointers.MatchmakingUpdate, Hooks::Matchmaking::MatchmakingUpdate));
 
 		BaseHook::Add<Hooks::Misc::AssistedAimShouldReleaseEntity>(new DetourHook("AssistedAimShouldReleaseEntity", Pointers.AssistedAimShouldReleaseEntity, Hooks::Misc::AssistedAimShouldReleaseEntity));
-
-		LOG(INFO) << "ShopCheckoutStartTarget: " << Pointers.ShopCheckoutStartTarget;
-		LOG(INFO) << "ShopRewriterTarget: " << Pointers.ShopRewriterTarget;
-		auto logTargetBytes = [](const char* name, void* p) {
-			if (!p)
-			{
-				LOG(INFO) << name << " bytes: NULL";
-				return;
-			}
-			auto* b = static_cast<const unsigned char*>(p);
-			char hex[64];
-			std::snprintf(hex, sizeof(hex), "%02X %02X %02X %02X %02X %02X %02X %02X",
-			    b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
-			LOG(INFO) << name << " bytes: " << hex << " (first=" << (b[0] == 0xE9 ? "E9" : "not-E9") << ")";
-		};
-		logTargetBytes("ShopCheckoutStartTarget", Pointers.ShopCheckoutStartTarget);
-		logTargetBytes("ShopRewriterTarget", Pointers.ShopRewriterTarget);
-		// Enhanced RVAs (see Pointers.cpp). Rewriter rewrites outbound txn JSON to $0
-		// so R*'s backend records ownership; CheckoutStart must always call original.
-		if (Pointers.ShopCheckoutStartTarget)
-			BaseHook::Add<Hooks::ShopBackend::CheckoutStart>(new DetourHook("ShopCheckoutStart", Pointers.ShopCheckoutStartTarget, Hooks::ShopBackend::CheckoutStart));
-		if (Pointers.ShopRewriterTarget)
-			BaseHook::Add<Hooks::ShopBackend::Rewriter>(new DetourHook("ShopRewriter", Pointers.ShopRewriterTarget, Hooks::ShopBackend::Rewriter));
 	}
 
 	Hooking::~Hooking()
@@ -91,11 +66,9 @@ namespace YimMenu
 	bool Hooking::InitImpl()
 	{
 		BaseHook::EnableAll();
-		const auto st = m_MinHook.ApplyQueued();
-		LOG(INFO) << "MH_ApplyQueued status=" << static_cast<int>(st)
-		          << (st == MH_OK ? " (OK)" : " (FAILED - hooks may be inactive!)");
+		m_MinHook.ApplyQueued();
 
-		return st == MH_OK;
+		return true;
 	}
 
 	void Hooking::DestroyImpl()

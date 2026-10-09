@@ -131,27 +131,10 @@ namespace YimMenu
 	inline void DetourHook<T>::OptimizeHook()
 	{
 		auto ptr = PointerCalculator(m_TargetFunc);
-		const auto* original = ptr.As<const unsigned char*>();
-		unsigned char before[8];
-		for (int i = 0; i < 8; ++i)
-			before[i] = original[i];
-
-		int hops = 0;
-		while (ptr.As<std::uint8_t&>() == 0xE9 && hops < 4)
+		while (ptr.As<std::uint8_t&>() == 0xE9)
 		{
 			ptr = ptr.Add(1).Rip();
-			++hops;
 		}
 		m_TargetFunc = ptr.As<void*>();
-
-		if (hops > 0)
-		{
-			const auto* after = static_cast<const unsigned char*>(m_TargetFunc);
-			LOG(INFO) << "OptimizeHook " << Name() << ": followed " << hops
-			          << " E9 hop(s) from " << static_cast<const void*>(original)
-			          << " -> " << m_TargetFunc;
-			(void)after;
-		}
-		(void)before;
 	}
 }
