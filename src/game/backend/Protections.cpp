@@ -122,7 +122,6 @@ namespace YimMenu
 			case ScriptEventIndex::CeoBan:
 			case ScriptEventIndex::VehicleKick:
 			case ScriptEventIndex::KickFromInterior:
-			case ScriptEventIndex::ForceMission:
 				ReportAttack(player, name);
 				return true;
 			default:
@@ -142,10 +141,8 @@ namespace YimMenu
 			case ScriptEventIndex::MCTeleport:
 			case ScriptEventIndex::StartActivity:
 			case ScriptEventIndex::MarkPlayerAsBeast:
-			case ScriptEventIndex::RemoteOffradar:
 			case ScriptEventIndex::DestroyPersonalVehicle:
 			case ScriptEventIndex::TriggerCEORaid:
-			case ScriptEventIndex::ClearWantedLevel:
 			case ScriptEventIndex::Spectate:
 				ReportAttack(player, name);
 				return true;
