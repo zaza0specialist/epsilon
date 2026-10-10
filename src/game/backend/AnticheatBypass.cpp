@@ -933,7 +933,7 @@ namespace YimMenu
 		else
 		{
 #if !RESTORE_DESTROYED_FUNCTIONS
-			LOGF(FATAL, "YimMenu requires FSL to be loaded. Please get it from UnknownCheats.me");
+			LOGF(FATAL, "Epsilon requires FSL to be loaded. Please get it from UnknownCheats.me");
 #endif
 		}
 

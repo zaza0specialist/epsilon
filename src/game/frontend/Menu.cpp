@@ -35,7 +35,7 @@ namespace YimMenu
 				    return;
 
 			    ImGui::PushFont(Menu::Font::g_DefaultFont);
-			    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImU32(ImColor(15, 15, 15)));
+			    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImU32(ImColor(21, 21, 21)));
 
 			    UIManager::Draw();
 
@@ -81,7 +81,7 @@ namespace YimMenu
 	void Menu::SetupFonts()
 	{
 		auto& IO = ImGui::GetIO();
-		auto file_path = std::filesystem::path(std::getenv("appdata")) / "YimMenuV2" / "imgui.ini";
+		auto file_path = std::filesystem::path(std::getenv("appdata")) / "Epsilon" / "imgui.ini";
 		static auto path = file_path.string();
 		IO.IniFilename = path.c_str();
 		IO.LogFilename = NULL;
