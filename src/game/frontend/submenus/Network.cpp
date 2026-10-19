@@ -1,10 +1,12 @@
 #include "Network.hpp"
 #include "core/backend/FiberPool.hpp"
 #include "core/frontend/Notifications.hpp"
+#include "game/backend/Protections.hpp"
 #include "game/frontend/items/Items.hpp"
 #include "game/frontend/submenus/Network/SavedPlayers.hpp"
 #include "game/frontend/submenus/Network/RandomEvents.hpp"
 #include "game/gta/Network.hpp"
+#include <chrono>
 
 namespace YimMenu::Submenus
 {
@@ -15,7 +17,6 @@ namespace YimMenu::Submenus
 		// TODO: this needs a rework
 		auto session = std::make_shared<Category>("Session");
 		auto joinGroup = std::make_shared<Group>("Join");
-		auto bountyGroup = std::make_shared<Group>("Bounty", 1);
 		auto toxicGroup = std::make_shared<Group>("Toxic");
 		auto teleportGroup = std::make_shared<Group>("Teleport");
 		auto trollGroup = std::make_shared<Group>("Troll");
@@ -56,34 +57,18 @@ namespace YimMenu::Submenus
 				});
 		}));
 
-		bountyGroup->AddItem(std::make_shared<IntCommandItem>("bountyamount"_J, "Amount"));
-		bountyGroup->AddItem(std::make_shared<BoolCommandItem>("anonymousbounty"_J, "Anonymous"));
-		bountyGroup->AddItem(std::make_shared<CommandItem>("setbountyall"_J, "Set Bounties"));
-
 		auto customPlayerTp = std::make_shared<Group>("", 1);
 		customPlayerTp->AddItem(std::make_shared<Vector3CommandItem>("playertpcoord"_J, ""));
 		customPlayerTp->AddItem(std::make_shared<CommandItem>("tpplayertocoordall"_J, "Teleport Everyone"));
-		auto tpToProperty = std::make_shared<Group>("", 1);
-		tpToProperty->AddItem(std::make_shared<ListCommandItem>("sendtopropertyindex"_J, "##selproperty"));
-		tpToProperty->AddItem(std::make_shared<CommandItem>("sendtopropertyall"_J, "Send All to Property"));
-		auto tpToInterior = std::make_shared<Group>("", 1);
-		tpToInterior->AddItem(std::make_shared<ListCommandItem>("sendtointeriorindex"_J, "##selinterior"));
-		tpToInterior->AddItem(std::make_shared<CommandItem>("sendtointeriorall"_J, "Send All to Interior"));
-		teleportGroup->AddItem(tpToProperty);
-		teleportGroup->AddItem(tpToInterior);
-		teleportGroup->AddItem(std::make_shared<CommandItem>("bringall"_J, "Bring All"));
 		teleportGroup->AddItem(customPlayerTp);
+		teleportGroup->AddItem(std::make_shared<CommandItem>("bringall"_J, "Bring All"));
 
-		trollGroup->AddItem(std::make_shared<CommandItem>("sendsextall"_J, "Send Sexts"));
 		trollGroup->AddItem(std::make_shared<BoolCommandItem>("harassplayers"_J));
 		trollGroup->AddItem(std::make_shared<BoolCommandItem>("spamkillfeed"_J));
 		trollGroup->AddItem(std::make_shared<CommandItem>("deletevehall"_J, "Delete Player Vehicles"));
 
 		toxicGroup->AddItem(std::make_shared<CommandItem>("killall"_J, "Kill All"));
-		toxicGroup->AddItem(std::make_shared<CommandItem>("killexploitall"_J, "Permadeath All"));
 		toxicGroup->AddItem(std::make_shared<CommandItem>("explodeall"_J, "Explode All"));
-		toxicGroup->AddItem(std::make_shared<CommandItem>("ceokickall"_J, "CEO Kick All"));
-		toxicGroup->AddItem(std::make_shared<CommandItem>("hkickall"_J, "Host Kick All"));
 
 		miscGroup->AddItem(std::make_shared<BoolCommandItem>("forcethunder"_J));
 
@@ -97,7 +82,6 @@ namespace YimMenu::Submenus
 		enhancements->AddItem(std::make_shared<BoolCommandItem>("nocalls"_J));
 
 		session->AddItem(joinGroup);
-		session->AddItem(bountyGroup);
 		session->AddItem(trollGroup);
 		session->AddItem(teleportGroup);
 		session->AddItem(toxicGroup);
@@ -112,6 +96,7 @@ namespace YimMenu::Submenus
 		spoofMMRegion->AddItem(std::make_shared<ConditionalItem>("spoofmmregion"_J, std::make_shared<ListCommandItem>("mmregion"_J, "##mmregion")));
 		matchmakingGroup->AddItem(std::make_shared<ConditionalItem>("cheaterpool"_J, spoofMMRegion, true));
 		matchmakingGroup->AddItem(std::make_shared<BoolCommandItem>("spoofdatahash"_J));
+		matchmakingGroup->AddItem(std::make_shared<CommandItem>("learncleanhashes"_J));
 		spoofing->AddItem(matchmakingGroup);
 
 		auto matchmakingSrvGroup = std::make_shared<Group>("Matchmaking (Server)");
@@ -135,6 +120,60 @@ namespace YimMenu::Submenus
 
 		AddCategory(std::move(session));
 		AddCategory(std::move(spoofing));
+
+		auto protections = std::make_shared<Category>("Protections");
+		auto toggles = std::make_shared<Group>("Script Events");
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_kicks"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_grief"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_cash"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_chat"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_lognet"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_logunknown"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_compat"_J));
+
+		auto attackLog = std::make_shared<Group>("Attack Log");
+		attackLog->AddItem(std::make_shared<ImGuiItem>([] {
+			auto log = Protections::GetAttackLog();
+
+			if (log.empty())
+			{
+				ImGui::TextDisabled("No attacks blocked yet");
+				return;
+			}
+
+			if (ImGui::BeginChild("##attacklog", ImVec2(0, 200), true))
+			{
+				for (auto& record : log)
+				{
+					auto age = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - record.LastSeen).count();
+
+					ImGui::Text("%s", record.PlayerName.c_str());
+					ImGui::SameLine();
+					ImGui::TextDisabled("- %s", record.EventName.c_str());
+					if (record.Count > 1)
+					{
+						ImGui::SameLine();
+						ImGui::TextDisabled(" x%d", record.Count);
+					}
+					if (age > 0 && age < 120)
+					{
+						ImGui::SameLine();
+						ImGui::TextDisabled(" (%llds ago)", static_cast<long long>(age));
+					}
+				}
+			}
+			ImGui::EndChild();
+
+			if (ImGui::Button("Clear Log"))
+				Protections::ClearAttackLog();
+		}));
+
+		protections->AddItem(toggles);
+
+		protections->AddItem(attackLog);
+		AddCategory(std::move(protections));
+
 		AddCategory(std::move(BuildSavedPlayersMenu()));
 		AddCategory(BuildRandomEventsMenu());
 	}

@@ -99,4 +99,44 @@ virtual void OnDisable() override
 	};
 
 	static CasinoManipulateRigSlotMachines _CasinoManipulateRigSlotMachines{"casinomanipulaterigslotmachines", "Manipulate Rig Slot Machines", "Lets you win the Rig Slot Machines every time"};
+
+	// Enhanced locals: prize = 302 + 14, state/trigger = 302 + 45 (Legacy uses 309)
+	static constexpr int prize_wheel_win_state = 302;
+	static constexpr int prize_wheel_prize_off = 14;
+	static constexpr int prize_wheel_state_off = 45;
+	static constexpr int prize_wheel_trigger_state = 11;
+
+	static std::vector<std::pair<int, const char*>> casinoLuckyWheelPrizeList = {
+		{18, "Podium Vehicle"},
+		{11, "Mystery"},
+		{19, "$50,000"},
+		{15, "25,000 Chips"},
+		{17, "RP"},
+		{8, "Clothing"},
+	};
+	static ListCommand _CasinoLuckyWheelPrize{"casinoluckywheelprize", "Lucky Wheel Prize", "Prize to force on the next spin", casinoLuckyWheelPrizeList, 0};
+
+	class CasinoManipulateLuckyWheel : public LoopedCommand
+	{
+		using LoopedCommand::LoopedCommand;
+
+		virtual void OnTick() override
+		{
+			if (!SCRIPT::GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH("casino_lucky_wheel"_J))
+				return;
+
+			Player wheelHost = NETWORK::NETWORK_GET_HOST_OF_SCRIPT("casino_lucky_wheel", -1, 0);
+			if (wheelHost.GetId() != Self::GetPlayer().GetId())
+				Scripts::ForceScriptHost(Scripts::FindScriptThread("casino_lucky_wheel"_J));
+
+			auto thread = Scripts::FindScriptThread("casino_lucky_wheel"_J);
+			if (!thread)
+				return;
+
+			*ScriptLocal(thread, prize_wheel_win_state + prize_wheel_prize_off).As<int*>() = _CasinoLuckyWheelPrize.GetState();
+			*ScriptLocal(thread, prize_wheel_win_state + prize_wheel_state_off).As<int*>() = prize_wheel_trigger_state;
+		}
+	};
+
+	static CasinoManipulateLuckyWheel _CasinoManipulateLuckyWheel{"casinomanipulateluckywheel", "Manipulate Lucky Wheel", "Forces the selected prize on the casino Lucky Wheel. Enable, then spin once."};
 }

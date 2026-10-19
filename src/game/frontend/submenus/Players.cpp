@@ -3,7 +3,6 @@
 #include "Player/Info.hpp"
 #include "Player/Toxic.hpp"
 #include "Player/Troll.hpp"
-#include "Player/Kick.hpp"
 #include "core/frontend/widgets/imgui_colors.h"
 #include "game/backend/PlayerData.hpp"
 #include "game/backend/Players.hpp"
@@ -120,7 +119,6 @@ namespace YimMenu::Submenus
 		AddCategory(std::move(BuildInfoMenu()));
 		AddCategory(std::move(BuildTrollMenu()));
 		AddCategory(std::move(BuildToxicMenu()));
-		AddCategory(std::move(BuildKickMenu()));
 
 		for (auto& category : m_Categories)
 			category->PrependItem(std::make_shared<ImGuiItem>([] {

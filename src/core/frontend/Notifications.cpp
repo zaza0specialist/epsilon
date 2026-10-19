@@ -3,7 +3,10 @@
 #include "core/logger/LogHelper.hpp"
 #include "core/backend/FiberPool.hpp"
 #include "core/util/Joaat.hpp"
+#include "game/frontend/Menu.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <mutex>
 
 namespace YimMenu
@@ -61,62 +64,123 @@ namespace YimMenu
 		return false;
 	}
 
+	namespace
+	{
+		// Brand accent, kept in sync with the Epsilon style so toasts match the window.
+		const ImVec4 k_Accent{140.0f / 255.0f, 174.0f / 255.0f, 217.0f / 255.0f, 1.0f};
+
+		constexpr float k_Radius = 10.0f;
+		constexpr float k_PadX = 14.0f;
+
+		std::string Upper(std::string text)
+		{
+			std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
+				return static_cast<char>(std::toupper(c));
+			});
+			return text;
+		}
+
+		ImVec4 StatusColor(NotificationType type)
+		{
+			switch (type)
+			{
+			case NotificationType::Success:
+				return ImVec4(0.36f, 0.78f, 0.47f, 1.0f);
+			case NotificationType::Warning:
+				return ImVec4(0.95f, 0.75f, 0.30f, 1.0f);
+			case NotificationType::Error:
+				return ImVec4(0.92f, 0.40f, 0.42f, 1.0f);
+			case NotificationType::Info:
+			default:
+				return k_Accent;
+			}
+		}
+	}
+
 	static void DrawNotification(Notification& notification, int position)
 	{
-		float y_pos = position * 100;
-		float x_pos = 10;
-		ImVec2 cardSize(m_CardSizeX, m_CardSizeY);
+		const float yPos = position * (m_CardSizeY + 10.0f);
+		const float xPos = 10.0f;
+
+		const ImVec2 cardSize(m_CardSizeX, m_CardSizeY);
 
 		ImGui::SetNextWindowSize(cardSize, ImGuiCond_Always);
-		ImGui::SetNextWindowPos(ImVec2(x_pos + notification.m_AnimationOffset, y_pos + 10), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(xPos + notification.m_AnimationOffset, yPos + 10.0f), ImGuiCond_Always);
 
-		std::string windowTitle = std::to_string(position);
-		ImGui::Begin(windowTitle.c_str(), nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoFocusOnAppearing);
+		const std::string windowTitle = std::to_string(position);
 
-		auto timeElapsed = (float)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - notification.m_CreatedOn).count();
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, k_Radius);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-		auto depletionProgress = 1.0f - (timeElapsed / (float)notification.m_Duration);
+		ImGui::Begin(
+		    windowTitle.c_str(),
+		    nullptr,
+		    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+		        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+		        ImGuiWindowFlags_NoFocusOnAppearing);
 
-		ImGui::ProgressBar(depletionProgress, ImVec2(-1, 3.5f), "");
+		ImFont* font = Menu::Font::g_NotificationFont ? Menu::Font::g_NotificationFont : ImGui::GetFont();
+		if (font)
+			ImGui::PushFont(font);
 
-		// TODO: Add icon for type instead of colored text
-		if (notification.m_Type == NotificationType::Info)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
-		}
-		else if (notification.m_Type == NotificationType::Success)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
-		}
-		else if (notification.m_Type == NotificationType::Warning)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
-		}
-		else if (notification.m_Type == NotificationType::Error)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
-		}
+		auto* draw = ImGui::GetWindowDrawList();
+		const ImVec2 origin = ImGui::GetWindowPos();
+		const ImVec2 size = ImGui::GetWindowSize();
+		const ImVec2 end(origin.x + size.x, origin.y + size.y);
 
-		ImGui::PopStyleColor();
+		const ImVec4 status = StatusColor(notification.m_Type);
+		const ImU32 statusCol = ImGui::ColorConvertFloat4ToU32(status);
 
-		ImGui::Separator();
+		draw->AddRectFilled(origin, end, ImGui::GetColorU32(ImGuiCol_ChildBg), k_Radius);
+		draw->AddRect(origin, end, ImGui::GetColorU32(ImGuiCol_Border), k_Radius);
 
-		ImGui::TextWrapped("%s", notification.m_Message.c_str());
+		// status dot
+		const float dotY = origin.y + 19.0f;
+		draw->AddCircleFilled(ImVec2(origin.x + k_PadX + 3.5f, dotY), 3.5f, statusCol);
+
+		// title
+		const std::string title = Upper(notification.m_Title);
+		ImGui::SetCursorScreenPos(ImVec2(origin.x + k_PadX + 14.0f, origin.y + 9.0f));
+		ImGui::TextUnformatted(title.c_str());
+
+		// message
+		ImGui::SetCursorScreenPos(ImVec2(origin.x + k_PadX + 14.0f, origin.y + 30.0f));
+		ImGui::PushTextWrapPos(end.x - k_PadX);
+		ImGui::TextColored(
+		    ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled),
+		    "%s",
+		    notification.m_Message.c_str());
+		ImGui::PopTextWrapPos();
 
 		if (notification.m_ContextFunc)
 		{
-			ImGui::Spacing();
-			if (ImGui::Selectable(notification.m_ContextFuncName.c_str()))
+			ImGui::SetCursorScreenPos(ImVec2(origin.x + k_PadX + 14.0f, origin.y + size.y - 26.0f));
+			if (ImGui::SmallButton(notification.m_ContextFuncName.c_str()))
+			{
 				FiberPool::Push([notification] {
 					notification.m_ContextFunc();
 				});
+			}
 		}
 
+		// depletion line along the bottom edge
+		const auto timeElapsed = (float)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - notification.m_CreatedOn).count();
+		const float depletion = 1.0f - (timeElapsed / (float)notification.m_Duration);
+		const float clamped = std::clamp(depletion, 0.0f, 1.0f);
+		const float barHeight = 2.0f;
+
+		draw->AddRectFilled(
+		    ImVec2(origin.x + 1.0f, end.y - barHeight - 1.0f),
+		    ImVec2(origin.x + 1.0f + (size.x - 2.0f) * clamped, end.y - 1.0f),
+		    statusCol,
+		    1.0f);
+
+		if (font)
+			ImGui::PopFont();
+
 		ImGui::End();
+		ImGui::PopStyleVar(3);
 	}
 
 	void Notifications::DrawImpl()

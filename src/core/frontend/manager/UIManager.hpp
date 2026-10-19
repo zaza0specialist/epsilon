@@ -12,6 +12,7 @@ namespace YimMenu
 		Modern,
 		ModernV,
 		Modular,
+		Epsilon,
 	};
 
 	class UIManager

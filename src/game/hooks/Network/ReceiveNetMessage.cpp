@@ -1,7 +1,10 @@
 #include "core/hooking/DetourHook.hpp"
+#include "core/commands/BoolCommand.hpp"
+#include "core/commands/Commands.hpp"
 #include "core/scripting/LuaManager.hpp"
 #include "game/backend/AnticheatBypass.hpp"
 #include "game/backend/Players.hpp"
+#include "game/backend/Protections.hpp"
 #include "game/frontend/ChatDisplay.hpp"
 #include "game/hooks/Hooks.hpp"
 #include "game/gta/Packet.hpp"
@@ -10,6 +13,8 @@
 #include "types/network/netMessage.hpp"
 #include "types/rage/datBitBuffer.hpp"
 #include "core/frontend/widgets/imgui_colors.h"
+#include <algorithm>
+#include <array>
 
 namespace YimMenu::Hooks
 {
@@ -45,6 +50,22 @@ namespace YimMenu::Hooks
 			{
 				char msg[256]{};
 				buffer.ReadString(msg, sizeof(msg)); // we don't need the rest
+
+				if (auto cmd = Commands::GetCommand<BoolCommand>("prot_chat"_J); cmd && cmd->GetState())
+				{
+					std::string lower = msg;
+					std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return static_cast<char>(::tolower(c)); });
+
+					static constexpr std::array ad_markers = {
+					    "http://", "https://", "www.", "discord.", ".gg/", "t.me/", "youtube.com", "free money", "cheap money", ".com/", ".net/", ".xyz/"};
+
+					if (std::ranges::any_of(ad_markers, [&lower](const char* marker) { return lower.find(marker) != std::string::npos; }))
+					{
+						LOGF(WARNING, "Blocked chat ad from {}: {}", player.GetName(), msg);
+						Protections::ReportAttack(player, "Chat Ad");
+						return;
+					}
+				}
 
 				if (!LuaManager::DispatchEvent(MenuEvent::ChatMessageReceived, [player, msg](lua_State* state){
 					lua_pushinteger(state, player.GetId());
@@ -160,7 +181,11 @@ namespace YimMenu::Hooks
 		case rage::netMessage::Type::KickPlayer:
 		{
 			if (!AnticheatBypass::IsFSLProvidingBattlEyeBypass())
+			{
+				LOGF(WARNING, "Blocked KickPlayer (host kick) message");
 				return;
+			}
+			LOGF(WARNING, "Passing KickPlayer (host kick) message through (FSL provides BE bypass)");
 			break;
 		}
 		case rage::netMessage::Type::BattlEyeCmd:
@@ -173,40 +198,19 @@ namespace YimMenu::Hooks
 				buffer.Seek(4); // normalize before we read
 				buffer.ReadArrayBytes(&data, size);
 
+				const auto log_be = [] {
+					auto cmd = Commands::GetCommand<BoolCommand>("prot_lognet"_J);
+					return cmd && cmd->GetState();
+				}();
+
+				if (log_be)
+					LOGF(WARNING, "BattlEyeCmd size={} from_client={} op=0x{:02X} b1=0x{:02X}", size, from_client,
+					    size > 0 ? static_cast<unsigned char>(data[0]) : 0, size > 1 ? static_cast<unsigned char>(data[1]) : 0);
+
 				if (from_client)
 					break;
 
-				Packet reply;
-				char reply_buf[1028]{};
-				int reply_sz = 0;
-
-				auto op = data[0];
-
-				if (op == 0)
-				{
-					char payload[] = {0x0, 0x5};
-					reply_sz = sizeof(payload);
-					memcpy(reply_buf, payload, reply_sz);
-				}
-				else if (op == 2 || op == 4)
-				{
-					char payload[] = {op, data[1]};
-					reply_sz = sizeof(payload);
-					memcpy(reply_buf, payload, reply_sz);
-				}
-				else if (op == 9)
-				{
-					reply_sz = size;
-					memcpy(reply_buf, data, reply_sz);
-				}
-
-				reply.WriteMessageHeader(rage::netMessage::Type::BattlEyeCmd);
-				reply.GetBuffer().Write<int>(reply_sz, 11);
-				reply.GetBuffer().Write<bool>(true, 1);
-				reply.GetBuffer().Seek(4);
-				reply.GetBuffer().WriteArrayBytes(reply_buf, reply_sz);
-				reply.Send(fr_evt->m_MsgId);
-				return;
+				break;
 			}
 			break;
 		}

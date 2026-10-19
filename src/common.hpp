@@ -28,6 +28,10 @@ using namespace al;
 
 #undef Yield
 
+#ifndef EPSILON_VERSION
+#define EPSILON_VERSION "dev"
+#endif
+
 namespace YimMenu
 {
 	using namespace std::chrono_literals;

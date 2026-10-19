@@ -1,6 +1,8 @@
 #include "core/commands/LoopedCommand.hpp"
+#include "core/commands/BoolCommand.hpp"
 #include "core/commands/Commands.hpp"
 #include "core/util/Joaat.hpp"
+#include "game/backend/Protections.hpp"
 #include "game/backend/Self.hpp"
 #include "game/gta/Natives.hpp"
 #include "game/hooks/Hooks.hpp"
@@ -28,7 +30,8 @@ namespace YimMenu::Hooks
 	{
 		if (*(int16_t*)&event.m_InteriorIndex < -1)
 		{
-			LOG(INFO) << "blocked invalid interior crash from " << player.GetName();
+			LOGF(WARNING, "Blocked invalid interior explosion crash from {}", player.GetName());
+			Protections::ReportAttack(player, "Explosion (interior crash)");
 			return true;
 		}
 
@@ -37,20 +40,60 @@ namespace YimMenu::Hooks
 			float dist = event.m_Position.GetDistance(Self::GetPed().GetPosition());
 			if (event.m_CameraShake > 0.0f && dist <= 30.0f)
 			{
-				// Camera shake
-				LOGF(WARNING, "Blocked EXPLOSION_EVENT from {} since m_CameraShake > 0.0f", player.GetName());
+				// Camera shake grief
+				LOGF(WARNING, "Blocked invisible EXPLOSION_EVENT (camera shake) from {} at dist {:.1f}", player.GetName(), dist);
+				Protections::ReportAttack(player, "Explosion (invisible shake)");
 				return true;
 			}
 
 			if (event.m_DamageScale > 0.0f && dist <= 10.0f)
 			{
-				// Ragdoll
-				LOGF(WARNING, "Blocked EXPLOSION_EVENT from {} since m_DamageScale > 0.0f", player.GetName());
+				// Ragdoll grief
+				LOGF(WARNING, "Blocked invisible EXPLOSION_EVENT (ragdoll) from {} at dist {:.1f}", player.GetName(), dist);
+				Protections::ReportAttack(player, "Explosion (invisible ragdoll)");
 				return true;
 			}
 		}
 
-		// more?
+		// owned explosion with absurd damage scale targeting us or very close
+		if (event.m_DamageScale > 1.0f)
+		{
+			float dist = event.m_Position.GetDistance(Self::GetPed().GetPosition());
+			if (dist <= 5.0f)
+			{
+				LOGF(WARNING, "Blocked high-damage EXPLOSION_EVENT from {} at dist {:.1f}", player.GetName(), dist);
+				Protections::ReportAttack(player, "Explosion (high damage)");
+				return true;
+			}
+		}
+
+		// explosion type check: only allow types that exist in normal gameplay
+		// type 0 is grenade/common, 1 rocket, etc. — values like 27 (train) from far away are crash attempts
+		if (static_cast<int>(event.m_ExplosionType) > 26)
+		{
+			LOGF(WARNING, "Blocked EXPLOSION_EVENT with invalid type {} from {}", static_cast<int>(event.m_ExplosionType), player.GetName());
+			Protections::ReportAttack(player, "Explosion (invalid type)");
+			return true;
+		}
+
+		// explosion targeting our local ped or vehicle directly
+		if (Self::GetPed().GetNetworkObjectId() == event.m_TargetEntity)
+		{
+			LOGF(WARNING, "Blocked EXPLOSION_EVENT targeting our ped from {}", player.GetName());
+			Protections::ReportAttack(player, "Explosion (targeted ped)");
+			return true;
+		}
+
+		if (Self::GetVehicle() && Self::GetVehicle().GetNetworkObjectId() == event.m_TargetEntity)
+		{
+			// legitimate vehicle damage happens, but only block if damage scale is high
+			if (event.m_DamageScale > 0.5f)
+			{
+				LOGF(WARNING, "Blocked high-damage EXPLOSION_EVENT targeting our vehicle from {}", player.GetName());
+				Protections::ReportAttack(player, "Explosion (targeted vehicle)");
+				return true;
+			}
+		}
 
 		return false;
 	}
@@ -124,15 +167,83 @@ namespace YimMenu::Hooks
 
 	bool ShouldAllowNetEvent(Player player, uint16_t event_id, rage::datBitBuffer& buffer)
 	{
+		// Compatibility Mode: pass everything through untouched (ReceiveNetGameEvent still logs it)
+		if (auto compat = Commands::GetCommand<BoolCommand>("prot_compat"_J); compat && compat->GetState())
+			return true;
+
+		const bool rate_spam = [] {
+			auto cmd = Commands::GetCommand<BoolCommand>("prot_spam"_J);
+			return cmd && cmd->GetState();
+		}();
+
+		const bool prot_grief = [] {
+			auto cmd = Commands::GetCommand<BoolCommand>("prot_grief"_J);
+			return cmd && cmd->GetState();
+		}();
+
+		const bool prot_kicks = [] {
+			auto cmd = Commands::GetCommand<BoolCommand>("prot_kicks"_J);
+			return cmd && cmd->GetState();
+		}();
+
+		const bool prot_cash = [] {
+			auto cmd = Commands::GetCommand<BoolCommand>("prot_cash"_J);
+			return cmd && cmd->GetState();
+		}();
+
+		// global flood guard regardless of category
+		if (rate_spam && Protections::CheckGlobalRateLimit(player, 120))
+			return false;
+
 		switch (static_cast<rage::netGameEvent::Type>(event_id))
 		{
 		case rage::netGameEvent::Type::REQUEST_CONTROL_EVENT:
 		{
-			// TODO
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::RequestControl, "REQUEST_CONTROL (rate)", 20))
+				return false;
+
+			CRequestControlEvent event;
+			event.Deserialize(buffer);
+
+			if (Self::GetPed().GetNetworkObjectId() == event.m_ObjectId)
+			{
+				LOGF(WARNING, "Blocked REQUEST_CONTROL_EVENT on our local ped from {}", player.GetName());
+				Protections::ReportAttack(player, "Request Control (ped)");
+				return false;
+			}
+
+			if (Self::GetVehicle() && Self::GetVehicle().GetNetworkObjectId() == event.m_ObjectId)
+			{
+				LOGF(WARNING, "Blocked REQUEST_CONTROL_EVENT on our local vehicle from {}", player.GetName());
+				Protections::ReportAttack(player, "Request Control (vehicle)");
+				return false;
+			}
+
+			break;
+		}
+		case rage::netGameEvent::Type::GIVE_CONTROL_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::GiveControl, "GIVE_CONTROL (rate)", 15))
+				return false;
+
+			CGiveControlEvent event;
+			event.Deserialize(buffer);
+
+			if (Self::GetPed().GetNetworkObjectId() == event.m_ObjectId
+			    || (Self::GetVehicle() && Self::GetVehicle().GetNetworkObjectId() == event.m_ObjectId))
+			{
+				LOGF(WARNING, "Blocked GIVE_CONTROL_EVENT on our local entity from {}", player.GetName());
+				Protections::ReportAttack(player, "Give Control (local entity)");
+				return false;
+			}
+
 			break;
 		}
 		case rage::netGameEvent::Type::WEAPON_DAMAGE_EVENT:
 		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::WeaponDamage, "WEAPON_DAMAGE_EVENT (rate)", 25))
+				return false;
+
 			CWeaponDamageEvent event;
 			event.Deserialize(buffer);
 
@@ -144,8 +255,157 @@ namespace YimMenu::Hooks
 
 			break;
 		}
+		case rage::netGameEvent::Type::GIVE_WEAPON_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::GiveWeapon, "GIVE_WEAPON (rate)", 8))
+				return false;
+
+			if (!prot_grief)
+				break;
+
+			CGiveWeaponEvent event;
+			event.Deserialize(buffer);
+
+			if (Self::GetPed().GetNetworkObjectId() == event.m_PedId)
+			{
+				LOGF(WARNING, "Blocked GIVE_WEAPON_EVENT on our local ped from {} (weapon {:X})", player.GetName(), event.m_WeaponType);
+				Protections::ReportAttack(player, "Give Weapon (ped)");
+				return false;
+			}
+
+			break;
+		}
+		case rage::netGameEvent::Type::REMOVE_WEAPON_EVENT:
+		{
+			if (!prot_grief)
+				break;
+
+			CRemoveWeaponEvent event;
+			event.Deserialize(buffer);
+
+			if (Self::GetPed().GetNetworkObjectId() == event.m_PedId)
+			{
+				LOGF(WARNING, "Blocked REMOVE_WEAPON_EVENT on our local ped from {}", player.GetName());
+				Protections::ReportAttack(player, "Remove Weapon (ped)");
+				return false;
+			}
+
+			break;
+		}
+		case rage::netGameEvent::Type::REMOVE_ALL_WEAPONS_EVENT:
+		{
+			if (!prot_grief)
+				break;
+
+			CRemoveAllWeaponsEvent event;
+			event.Deserialize(buffer);
+
+			if (Self::GetPed().GetNetworkObjectId() == event.m_PedId)
+			{
+				LOGF(WARNING, "Blocked REMOVE_ALL_WEAPONS_EVENT on our local ped from {}", player.GetName());
+				Protections::ReportAttack(player, "Remove All Weapons");
+				return false;
+			}
+
+			break;
+		}
+		case rage::netGameEvent::Type::NETWORK_CLEAR_PED_TASKS_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::ClearPedTasks, "CLEAR_PED_TASKS (rate)", 6))
+				return false;
+
+			if (!prot_grief)
+				break;
+
+			CNetworkClearPedTasksEvent event;
+			event.Deserialize(buffer);
+
+			if (Self::GetPed().GetNetworkObjectId() == event.m_PedId)
+			{
+				LOGF(WARNING, "Blocked NETWORK_CLEAR_PED_TASKS_EVENT on our local ped from {}", player.GetName());
+				Protections::ReportAttack(player, "Clear Ped Tasks");
+				return false;
+			}
+
+			break;
+		}
+		case rage::netGameEvent::Type::BLOW_UP_VEHICLE_EVENT:
+		{
+			if (!prot_grief)
+				break;
+
+			CBlowUpVehicleEvent event;
+			event.Deserialize(buffer);
+
+			if (Self::GetVehicle() && Self::GetVehicle().GetNetworkObjectId() == event.m_VehicleId)
+			{
+				LOGF(WARNING, "Blocked BLOW_UP_VEHICLE_EVENT on our local vehicle from {}", player.GetName());
+				Protections::ReportAttack(player, "Blow Up Vehicle");
+				return false;
+			}
+
+			break;
+		}
+		case rage::netGameEvent::Type::NETWORK_INCREMENT_STAT_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::IncrementStat, "INCREMENT_STAT (rate)", 10))
+				return false;
+
+			if (!prot_kicks)
+				break;
+
+			// forced stat increments from strangers are never normal gameplay
+			LOGF(WARNING, "Blocked NETWORK_INCREMENT_STAT_EVENT from {}", player.GetName());
+			Protections::ReportAttack(player, "Increment Stat");
+			return false;
+		}
+		case rage::netGameEvent::Type::KICK_VOTES_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::KickVotes, "KICK_VOTES (rate)", 4))
+				return false;
+
+			break;
+		}
+		case rage::netGameEvent::Type::GIVE_PICKUP_REWARDS_EVENT:
+		{
+			// legit reward grants are rare; bursts are cash/pickup drop spam
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::GivePickup, "GIVE_PICKUP_REWARDS (rate)", 6))
+				return false;
+
+			break;
+		}
+		case rage::netGameEvent::Type::REPORT_CASH_SPAWN_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::ReportCashSpawn, "REPORT_CASH_SPAWN (rate)", 4))
+				return false;
+
+			if (!prot_cash)
+				break;
+
+			LOGF(WARNING, "Blocked REPORT_CASH_SPAWN_EVENT from {}", player.GetName());
+			Protections::ReportAttack(player, "Report Cash Spawn");
+			return false;
+		}
+		case rage::netGameEvent::Type::FIRE_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::Fire, "FIRE_EVENT (rate)", 15))
+				return false;
+
+			break;
+		}
+		case rage::netGameEvent::Type::START_PROJECTILE_EVENT:
+		case rage::netGameEvent::Type::UPDATE_PROJECTILE_TARGET_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::Projectile, "PROJECTILE (rate)", 20))
+				return false;
+
+			break;
+		}
 		case rage::netGameEvent::Type::EXPLOSION_EVENT:
 		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::Explosion, "EXPLOSION_EVENT (rate)", 8))
+				return false;
+
 			CExplosionEvent event;
 			event.Deserialize(buffer);
 
@@ -180,6 +440,9 @@ namespace YimMenu::Hooks
 		}
 		case rage::netGameEvent::Type::SCRIPTED_GAME_EVENT:
 		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::Scripted, "SCRIPTED_GAME_EVENT (rate)", 40))
+				return false;
+
 			CScriptedGameEvent event;
 
 			if (!event.Deserialize(buffer))
@@ -289,6 +552,9 @@ namespace YimMenu::Hooks
 		}
 		case rage::netGameEvent::Type::NETWORK_PLAY_SOUND_EVENT:
 		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::PlaySound, "PLAY_SOUND (rate)", 12))
+				return false;
+
 			CPlaySoundEvent event;
 			event.Deserialize(buffer);
 
@@ -297,6 +563,14 @@ namespace YimMenu::Hooks
 				LOGF(WARNING, "Blocked NETWORK_PLAY_SOUND_EVENT from {} with IsEntity: {}, RefHash: {:X}, SoundHash: {:X}, SoundId: {}, ScriptHash: {:X}", player.GetName(), event.m_IsEntity, event.m_RefHash, event.m_SoundHash, event.m_SoundId, event.m_ScriptId.m_Hash);
 				return false;
 			}
+
+			break;
+		}
+		case rage::netGameEvent::Type::NETWORK_PTFX_EVENT:
+		case rage::netGameEvent::Type::MODIFY_PTFX_WORD_STATE_DATA_SCRIPTED_EVOLVE_EVENT:
+		{
+			if (rate_spam && Protections::CheckRateLimit(player, RateBucket::Ptfx, "PTFX (rate)", 12))
+				return false;
 
 			break;
 		}
@@ -357,6 +631,10 @@ namespace YimMenu::Hooks
 
 	void Network::ReceiveNetGameEvent(Player player, uint16_t event_id, uint32_t event_index, uint32_t event_handled_bits, rage::datBitBuffer& buffer)
 	{
+		// event_index repeats across retransmissions — identical idx in a burst = the sender is re-trying
+		if (auto cmd = Commands::GetCommand<BoolCommand>("prot_lognet"_J); cmd && cmd->GetState())
+			LOGF(WARNING, "NetEvent id={} idx={} bits=0x{:02X} from {}", event_id, event_index, event_handled_bits, player.GetName());
+
 		if (!ShouldAllowNetEvent(player, event_id, buffer))
 			SendEventAck(*Pointers.NetEventMgr, player.GetHandle(), Self::GetPlayer().GetHandle(), event_index, event_handled_bits);
 	}

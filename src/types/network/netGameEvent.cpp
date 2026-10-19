@@ -253,3 +253,55 @@ void CRagdollRequestEvent::Deserialize(rage::datBitBuffer& buffer)
 {
 	m_PedToRagdoll = buffer.Read<uint16_t>(13);
 }
+
+void CRequestControlEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_ObjectId = buffer.Read<uint16_t>(13);
+}
+
+void CGiveWeaponEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_WeaponType = buffer.Read<uint32_t>(32);
+	m_Ammo = buffer.Read<uint32_t>(32);
+	m_PedId = buffer.Read<uint16_t>(13);
+}
+
+void CRemoveWeaponEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_WeaponType = buffer.Read<uint32_t>(32);
+	m_PedId = buffer.Read<uint16_t>(13);
+}
+
+void CRemoveAllWeaponsEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_PedId = buffer.Read<uint16_t>(13);
+}
+
+void CNetworkClearPedTasksEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_PedId = buffer.Read<uint16_t>(13);
+	m_ForceAbort = buffer.Read<bool>(1);
+}
+
+void CBlowUpVehicleEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_VehicleId = buffer.Read<uint16_t>(13);
+	m_0x32 = buffer.Read<bool>(1);
+	m_0x33 = buffer.Read<bool>(1);
+}
+
+void CNetworkIncrementStatEventExt::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_Stat = buffer.Read<uint32_t>(32);
+	m_Amount = buffer.Read<uint32_t>(32, true);
+}
+
+void CKickVotesEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_TargetPlayer = buffer.Read<uint16_t>(8);
+}
+
+void CGiveControlEvent::Deserialize(rage::datBitBuffer& buffer)
+{
+	m_ObjectId = buffer.Read<uint16_t>(13);
+}

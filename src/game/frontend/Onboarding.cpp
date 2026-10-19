@@ -4,7 +4,6 @@
 #include "core/commands/BoolCommand.hpp"
 #include "game/backend/AnticheatBypass.hpp"
 #include "game/pointers/Pointers.hpp"
-#include <shellapi.h>
 
 namespace YimMenu
 {
@@ -30,34 +29,21 @@ namespace YimMenu
 		if (ImGui::BeginPopupModal("IMPORTANT! PLEASE READ!", nullptr, ImGuiWindowFlags_NoSavedSettings))
 		{
 			ImGui::TextWrapped("%s",
-			    "Welcome to YimMenuV2! You can press INSERT or Ctrl+\\ to open the menu. With the introduction of BattlEye, the ability to join and stay in public sessions has been severely limited. "
-			    "You have an option to play only with other YimMenu users, or you can choose to connect to regular BattlEye-protected sessions. "
-			    "You will automatically be kicked out of regular sessions in under three minutes, and you may be temporarily blacklisted from "
-			    "joining for up to two days, even after re-enabling BattlEye");
+			    "Welcome to Epsilon V1.0.0b! You can press INSERT or Ctrl+\\ to open the menu. "
+			    "By default you can play with everyone. If BattlEye is running (no FSL), you may be kicked from public sessions "
+			    "while using certain features — if that happens, enable Epsilon-only sessions to keep playing with other Epsilon users.");
 			static int value = 0;
-			ImGui::RadioButton("Play with YimMenu users", &value, 0);
+			ImGui::RadioButton("Play with everyone", &value, 0);
 			ImGui::SameLine();
-			ImGui::RadioButton("Play with everyone (Broken!)", &value, 1);
+			ImGui::RadioButton("Play with Epsilon users only", &value, 1);
 			ImGui::TextWrapped("%s",
-			    "You can always change your choice by toggling Network > Spoofing > Join YimMenu-only Sessions. Our official repository is at "
-			    "https://github.com/YimMenu/YimMenuV2. Make sure to only download the menu from GitHub to avoid malware. "
-			    "You can use the repository to report bugs, suggest features, and contribute by making pull requests. We also have a "
-			    "Matrix server that can be found at https://matrix.to/#/#yimmenu:matrix.org for faster communication with developers "
-			    "and other users. Matrix is a free and open source alternative to Discord, and creating an account is safe and easy");
-			if (ImGui::Button("Open GitHub"))
-			{
-				ShellExecuteA(NULL, "open", "https://github.com/YimMenu/YimMenuV2", NULL, NULL, SW_SHOWNORMAL);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Open Matrix server"))
-			{
-				ShellExecuteA(NULL, "open", "https://matrix.to/#/#yimmenu:matrix.org", NULL, NULL, SW_SHOWNORMAL);
-			}
+			    "You can always change your choice later in Network > Spoofing > Join Epsilon-only Sessions. "
+			    "This menu is private software. Only use builds obtained from your trusted source.");
 			ImGui::TextWrapped("%s",
-			    "Check for updates reguarly; we publish new builds every night. But most importantly, mess around and have fun with YimMenu!");
+			    "Most importantly, mess around and have fun with Epsilon!");
 			if (ImGui::Button("Close"))
 			{
-				Commands::GetCommand<BoolCommand>("cheaterpool"_J)->SetState(!value);
+				Commands::GetCommand<BoolCommand>("cheaterpool"_J)->SetState(value == 1);
 				_OnboardingComplete.SetState(true);
 				GUI::SetOnboarding(false);
 				ImGui::CloseCurrentPopup();

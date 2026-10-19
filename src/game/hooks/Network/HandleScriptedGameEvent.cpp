@@ -1,3 +1,4 @@
+#include "game/backend/Protections.hpp"
 #include "game/backend/Self.hpp"
 #include "game/hooks/Hooks.hpp"
 #include "game/pointers/Pointers.hpp"
@@ -7,6 +8,8 @@
 #include "types/script/ScriptEvent.hpp"
 #include "core/scripting/LuaManager.hpp"
 #include "core/scripting/LuaUtils.hpp"
+#include "core/commands/BoolCommand.hpp"
+#include "core/commands/Commands.hpp"
 #include "core/util/Joaat.hpp"
 
 namespace YimMenu::Hooks
@@ -34,7 +37,17 @@ namespace YimMenu::Hooks
 		if (!CheckLuaScripts(player, event))
 			return false;
 
+		// Compatibility Mode: never block, only observe (Protections logs what it would have done)
+		if (auto compat = Commands::GetCommand<BoolCommand>("prot_compat"_J); compat && compat->GetState())
+			return true;
+
 		SCRIPT_EVENT* script_event = reinterpret_cast<SCRIPT_EVENT*>(event.m_Args);
+
+		if (Protections::ShouldBlockEvent(player, script_event->GetEventIndex()))
+			return false;
+
+		if (!Protections::IsKnownEvent(script_event->GetEventIndex()))
+			Protections::LogUnknownScriptEvent(player, script_event->GetEventIndex(), event.m_Args, static_cast<int>(event.m_ArgsSize / 8));
 
 		switch (static_cast<ScriptEventIndex>(script_event->GetEventIndex()))
 		{
@@ -44,26 +57,24 @@ namespace YimMenu::Hooks
 
 			if (event.m_ArgsSize != SCRIPT_EVENT_BOUNTY::GetSize())
 			{
-				//player.AddDetection();
+				Protections::ReportAttack(player, "Malformed Bounty");
 				return false;
 			}
 
 			if (bounty->Target == Self::GetPlayer().GetId())
 			{
+				Protections::ReportAttack(player, "Bounty (self)");
 				return false;
 			}
 
 			break;
 		}
-		case ScriptEventIndex::SendTextLabelSMS:
-		{
-			//player.AddDetection();
-			return false;
-		}
 		case ScriptEventIndex::CeoKick:
 		{
+			// allow your actual boss to kick you from the org (legit game mechanic)
 			if (player.GetId() != GPBD_FM_3::Get()->Entries[Self::GetPlayer().GetId()].BossGoon.Boss)
 			{
+				Protections::ReportAttack(player, "CEO Kick (not boss)");
 				return false;
 			}
 
@@ -73,15 +84,15 @@ namespace YimMenu::Hooks
 		{
 			SCRIPT_EVENT_SEND_TO_INTERIOR* interior_control = static_cast<SCRIPT_EVENT_SEND_TO_INTERIOR*>(script_event);
 
-			if (interior_control->Interior < 0 || interior_control->Interior >= static_cast<int>(eSimpleInteriorIndex::SIMPLE_INTERIOR_MAX)) // the upper bound will change after an update
+			if (interior_control->Interior < 0 || interior_control->Interior >= static_cast<int>(eSimpleInteriorIndex::SIMPLE_INTERIOR_MAX))
 			{
-				// null function kick
+				Protections::ReportAttack(player, "Interior Control (null function kick)");
 				return false;
 			}
 
 			if (!interior_control->GoonsOnly)
 			{
-				// send to interior
+				Protections::ReportAttack(player, "Interior Control (forced teleport)");
 				return false;
 			}
 

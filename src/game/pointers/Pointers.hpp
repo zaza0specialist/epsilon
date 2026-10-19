@@ -121,8 +121,6 @@ namespace YimMenu
 		bool* NeedsBERestart;
 		bool* IsBEBanned;
 		BytePatch BattlEyeStatusUpdatePatch;
-		PVOID WriteNetArrayData;
-		BytePatch NetArrayCachedDataPatch;
 		rage::netArrayMgr** NetArrayMgr;
 		CStatsMgr* StatsMgr;
 		Functions::GetPackedStatData GetPackedStatData;

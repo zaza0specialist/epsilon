@@ -235,13 +235,7 @@ namespace YimMenu
 
 		constexpr auto writeNetArrayDataPtrn = Pattern<"0F 84 06 03 00 00 0F B6 83">("WriteNetArrayData");
 		scanner.Add(writeNetArrayDataPtrn, [this](PointerCalculator ptr) {
-			WriteNetArrayData = ptr.Sub(0x4E).As<PVOID>();
 			NetArrayMgr = ptr.Sub(0x32).Add(3).As<rage::netArrayMgr**>();
-		});
-
-		constexpr auto netArrayCachedDataPatchPtrn = Pattern<"0F 84 64 FE FF FF FF">("NetArrayCachedDataPatch");
-		scanner.Add(netArrayCachedDataPatchPtrn, [this](PointerCalculator ptr) {
-			NetArrayCachedDataPatch = BytePatches::Add(ptr.As<void*>(), std::to_array<std::uint8_t>({0xE9, 0x65, 0xFE, 0xFF, 0xFF, 0x90}));
 		});
 
 		constexpr auto statsMgrPtrn = Pattern<"89 6C 24 28 48 8D 0D ? ? ? ? 48 8D">("CStatsMgr");

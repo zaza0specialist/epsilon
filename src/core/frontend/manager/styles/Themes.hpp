@@ -10,6 +10,7 @@ namespace YimMenu
 	extern void RenderModernTheme();
 	extern void RenderModernVTheme();
 	extern void RenderModularTheme();
+	extern void RenderEpsilonTheme();
 	extern void SetupStyle();
 	extern void DefaultStyle();
 }

@@ -42,6 +42,24 @@ namespace YimMenu::Submenus
 		}
 	};
 
+	static void About()
+	{
+		ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_Text), "Epsilon");
+		ImGui::SameLine();
+		ImGui::TextDisabled("v%s", EPSILON_VERSION);
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::BulletText("Private YimMenu v2 fork for GTA V: Enhanced");
+		ImGui::BulletText("Open the menu with INSERT or Ctrl+\\");
+		ImGui::BulletText("Settings and logs live in %%APPDATA%%\\Epsilon");
+		ImGui::BulletText("Upstream: YimMenu/YimMenuV2 (GPL-2.0)");
+
+		ImGui::Spacing();
+	}
+
 	Settings::Settings() :
 	#define ICON_FA_GEARS "\xef\x80\x93"
 	    Submenu::Submenu("Settings", ICON_FA_GEARS)
@@ -49,10 +67,11 @@ namespace YimMenu::Submenus
 		auto hotkeys = std::make_shared<Category>("Hotkeys");
 		auto gui = std::make_shared<Category>("GUI");
 		auto game = std::make_shared<Category>("Game");
+		auto about = std::make_shared<Category>("About");
 
 		auto uiStyle = std::make_shared<Group>("UI");
-		auto playerEsp = std::make_shared<Group>("Player ESP", 10);
-		auto pedEsp = std::make_shared<Group>("Ped ESP", 10);
+		auto playerEsp = std::make_shared<Group>("Player ESP", 12);
+		auto pedEsp = std::make_shared<Group>("Ped ESP", 12);
 		auto objectEsp = std::make_shared<Group>("Object ESP");
 		auto overlay = std::make_shared<Group>("Overlay");
 		auto chat = std::make_shared<Group>("Chat");
@@ -73,6 +92,12 @@ namespace YimMenu::Submenus
 		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("espskeletonplayers"_J, "Player Skeleton")));
 		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<ColorCommandItem>("skeletoncolorplayers"_J)));
 
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("espboxplayers"_J, "Player Box")));
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espboxplayers"_J, std::make_shared<ColorCommandItem>("boxcolorplayers"_J)));
+
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("esphealthbarplayers"_J, "Player Health Bar")));
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("esparmorbarplayers"_J, "Player Armor Bar")));
+
 		// Peds
 		pedEsp->AddItem(std::make_shared<BoolCommandItem>("espdrawpeds"_J));
 		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("espdrawdeadpeds"_J)));
@@ -88,6 +113,12 @@ namespace YimMenu::Submenus
 		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("espskeletonpeds"_J, "Ped Skeleton")));
 		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<ColorCommandItem>("skeletoncolorpeds"_J)));
 
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("espboxpeds"_J, "Ped Box")));
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espboxpeds"_J, std::make_shared<ColorCommandItem>("boxcolorpeds"_J)));
+
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("esphealthbarpeds"_J, "Ped Health Bar")));
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("esparmorbarpeds"_J, "Ped Armor Bar")));
+
 		objectEsp->AddItem(std::make_shared<BoolCommandItem>("espdrawobjects"_J));
 		objectEsp->AddItem(std::make_shared<ConditionalItem>("espdrawobjects"_J, std::make_shared<ColorCommandItem>("hashcolorobjects"_J)));
 		objectEsp->AddItem(std::make_shared<ConditionalItem>("espdrawobjects"_J, std::make_shared<BoolCommandItem>("espnetinfoobjects"_J, "Object Net Info")));
@@ -101,6 +132,8 @@ namespace YimMenu::Submenus
 
 		chat->AddItem(std::make_shared<CommandItem>("clearchat"_J));
 
+		about->AddItem(std::make_shared<ImGuiItem>(About));
+
 		game->AddItem(playerEsp);
 		game->AddItem(pedEsp);
 		game->AddItem(objectEsp);
@@ -112,6 +145,7 @@ namespace YimMenu::Submenus
 		AddCategory(std::move(hotkeys));
 		AddCategory(std::move(gui));
 		AddCategory(std::move(game));
+		AddCategory(std::move(about));
 		AddCategory(DrawGUISettingsMenu());
 		AddCategory(BuildLuaScriptsMenu());
 	}

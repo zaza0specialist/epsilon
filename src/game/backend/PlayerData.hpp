@@ -8,6 +8,5 @@ namespace YimMenu
 	{
 	public:
 		bool m_IsModder{};
-		bool m_RunFreemodeStateKick{};
 	};
 }

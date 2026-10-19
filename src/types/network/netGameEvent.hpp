@@ -383,3 +383,82 @@ public:
 
 	uint16_t m_PedToRagdoll; // 0x30
 };
+
+class CRequestControlEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint16_t m_ObjectId; // 0x30
+};
+
+class CGiveWeaponEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint32_t m_WeaponType; // 0x30
+	uint32_t m_Ammo;       // 0x34
+	uint16_t m_PedId;      // 0x38
+};
+
+class CRemoveWeaponEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint32_t m_WeaponType; // 0x30
+	uint16_t m_PedId;      // 0x34
+};
+
+class CRemoveAllWeaponsEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint16_t m_PedId; // 0x30
+};
+
+class CNetworkClearPedTasksEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint16_t m_PedId;   // 0x30
+	bool m_ForceAbort;  // 0x32
+};
+
+class CBlowUpVehicleEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint16_t m_VehicleId; // 0x30
+	bool m_0x32;
+	bool m_0x33;
+};
+
+class CNetworkIncrementStatEventExt : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint32_t m_Stat;   // 0x30
+	uint32_t m_Amount; // 0x34
+};
+
+class CKickVotesEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint16_t m_TargetPlayer; // 0x30
+};
+
+class CGiveControlEvent : public rage::netGameEvent
+{
+public:
+	void Deserialize(rage::datBitBuffer& buffer);
+
+	uint16_t m_ObjectId; // 0x30
+};
