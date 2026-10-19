@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20.x)
 
 include(cmake/cross-compile.cmake)
 
-project(Epsilon VERSION 0.0.1 DESCRIPTION "Epsilon Program — a private YimMenuV2 fork")
+project(Epsilon VERSION 1.0.0 DESCRIPTION "Epsilon — a private YimMenu v2 fork for GTA V: Enhanced")
 
 # libs
 include(cmake/async-logger.cmake)
@@ -28,6 +28,7 @@ add_compile_definitions(
     WIN32_LEAN_AND_MEAN
     NOMINMAX
     IMGUI_DEFINE_MATH_OPERATORS
+    EPSILON_VERSION="${PROJECT_VERSION}"
 )
 
 message(STATUS "Setting up include directories.")
