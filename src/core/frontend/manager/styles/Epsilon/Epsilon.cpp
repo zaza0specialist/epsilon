@@ -384,6 +384,7 @@ namespace YimMenu
 		static ImVec2 dragOffset{0.0f, 0.0f};
 		static ImVec2 fullSize{0.0f, 0.0f};
 		static bool sizeDirty = false;
+		static bool dragArmed = false;
 
 		const float defaultWidth = *YimMenu::Pointers.ScreenResX / 1.8f;
 		const float defaultHeight = *YimMenu::Pointers.ScreenResY / 1.7f;
@@ -456,32 +457,47 @@ namespace YimMenu
 
 			const float top = ImGui::GetCursorScreenPos().y;
 			const float buttonSize = 26.0f;
-			const float buttonsWidth = buttonSize * 2.0f + 8.0f;
 
 			const ImVec2 headerOrigin = ImGui::GetWindowPos();
 			const float right = headerOrigin.x + ImGui::GetContentRegionAvail().x - 14.0f;
 			const float buttonY = top + (k_HeaderHeight - buttonSize) * 0.5f;
 
-			// Buttons are submitted before the drag zone so they win the hover/click;
-			// the drag strip deliberately stops short of them.
-			if (DrawWindowButton("##epsilonClose", "\xc3\x97", ImVec2(right - buttonSize, buttonY), ImVec2(right, buttonY + buttonSize), true))
+			const ImVec2 closeMin(right - buttonSize, buttonY);
+			const ImVec2 closeMax(right, buttonY + buttonSize);
+			const ImVec2 minMin(right - buttonSize - 8.0f - buttonSize, buttonY);
+			const ImVec2 minMax(right - buttonSize - 8.0f, buttonY + buttonSize);
+
+			if (DrawWindowButton("##epsilonClose", "\xc3\x97", closeMin, closeMax, true))
 				GUI::Toggle();
 
-			if (DrawWindowButton(
-			        "##epsilonMinimize",
-			        "\xe2\x88\x92",
-			        ImVec2(right - buttonSize - 8.0f - buttonSize, buttonY),
-			        ImVec2(right - buttonSize - 8.0f, buttonY + buttonSize),
-			        false))
+			if (DrawWindowButton("##epsilonMinimize", "\xe2\x88\x92", minMin, minMax, false))
 			{
 				collapsed = !collapsed;
 				sizeDirty = true;
 			}
 
-			ImGui::SetCursorScreenPos(ImVec2(0.0f, top));
-			ImGui::InvisibleButton("##epsilonDrag", ImVec2(right - headerOrigin.x - buttonsWidth - 14.0f, k_HeaderHeight));
+			// The whole header bar is a drag surface, apart from the window buttons.
+			// The mouse is tested against the header rect directly: SetCursorScreenPos
+			// takes screen coordinates, so an InvisibleButton strip could not be
+			// anchored to the window's left edge without ending up off-screen.
+			const ImVec2 headerMin = ImGui::GetWindowPos();
+			const ImVec2 headerMax = headerMin + ImGui::GetWindowSize();
+			const ImVec2 mouse = ImGui::GetIO().MousePos;
 
-			if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+			const auto inside = [&](const ImVec2& a, const ImVec2& b) {
+				return mouse.x >= a.x && mouse.x <= b.x && mouse.y >= a.y && mouse.y <= b.y;
+			};
+
+			const bool overButton = inside(closeMin, closeMax) || inside(minMin, minMax);
+			const bool overHeader = inside(headerMin, headerMax);
+
+			if (overHeader && !overButton && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+				dragArmed = true;
+
+			if (dragArmed && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+				dragArmed = false;
+
+			if (dragArmed && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
 				dragOffset += ImGui::GetIO().MouseDelta;
 
 			ImGui::SetCursorScreenPos(ImVec2(0.0f, top + k_HeaderHeight));
@@ -630,6 +646,23 @@ namespace YimMenu
 							card.Group = group;
 							bool onlyToggles = !group->GetName().empty();
 
+							// Classification looks at what the group can hold, not at what happens to be
+							// visible right now. A conditional row that is hidden at this moment must not
+							// move the whole group between the card layout and the legacy renderer, or
+							// enabling the condition would swap the entire submenu back to the old UI.
+							for (auto& child : group->GetItems())
+							{
+								if (!child)
+									continue;
+
+								if (!child->GetToggleRow())
+								{
+									onlyToggles = false;
+									break;
+								}
+							}
+
+							// The badge counts what is on screen right now.
 							for (auto& child : group->GetItems())
 							{
 								if (!child || !child->CanDraw())
@@ -637,10 +670,7 @@ namespace YimMenu
 
 								auto row = child->GetToggleRow();
 								if (!row)
-								{
-									onlyToggles = false;
-									break;
-								}
+									continue;
 
 								card.Total++;
 								card.Enabled += row->State ? 1 : 0;

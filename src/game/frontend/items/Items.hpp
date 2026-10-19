@@ -122,6 +122,12 @@ namespace YimMenu
 		void Draw() override;
 		bool CanDraw() override;
 
+		// A conditional forwards the row of whatever it wraps, so a group that only
+		// holds toggles and conditionals still qualifies as a toggle group. The
+		// visibility of the condition must not change how the group is laid out.
+		std::optional<UIItem::ToggleRow> GetToggleRow() const override;
+		bool SetToggleState(bool state) override;
+
 	private:
 		BoolCommand* m_Condition;
 		std::function<bool()> m_ConditionFn;

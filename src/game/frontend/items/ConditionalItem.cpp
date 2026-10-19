@@ -37,4 +37,20 @@ namespace YimMenu
 
 		return false;
 	}
+
+	std::optional<UIItem::ToggleRow> ConditionalItem::GetToggleRow() const
+	{
+		if (!m_Item)
+			return std::nullopt;
+
+		return m_Item->GetToggleRow();
+	}
+
+	bool ConditionalItem::SetToggleState(bool state)
+	{
+		if (!m_Item)
+			return false;
+
+		return m_Item->SetToggleState(state);
+	}
 }
