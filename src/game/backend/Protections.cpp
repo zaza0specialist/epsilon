@@ -362,6 +362,7 @@ namespace YimMenu
 		{
 		case ScriptEventIndex::Crash:
 		case ScriptEventIndex::Crash2:
+		case ScriptEventIndex::Crash3:
 		case ScriptEventIndex::NotificationCrash1:
 		case ScriptEventIndex::NotificationCrash2:
 		case ScriptEventIndex::TSECommandLaunchHeist:
@@ -371,14 +372,6 @@ namespace YimMenu
 			return true;
 		default:
 			break;
-		}
-
-		// logged but NOT blocked: legit players in the 10/15 session sent this at join time,
-		// so the Crash 3 classification was wrong. keep the trace so we can confirm the value.
-		if (index == ScriptEventIndex::Crash3)
-		{
-			LOGF(WARNING, "Observed 323285304 ('Crash3') from {} — NOT blocked (false positive under investigation)", player.GetName());
-			return false;
 		}
 
 		// toggled blocks

@@ -21,6 +21,7 @@
 #include "game/backend/NativeHooks.hpp"
 #include "game/backend/Tunables.hpp"
 #include "game/backend/ScriptPointers.hpp"
+#include "game/backend/Heartbeat.hpp"
 #include "game/frontend/GUI.hpp"
 #include "game/pointers/Pointers.hpp"
 #include "game/features/vehicle/SavePersonalVehicle.hpp"
@@ -76,6 +77,7 @@ namespace YimMenu
 		ScriptMgr::AddScript(std::make_unique<Script>(&LuaManager::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&HotkeySystem::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Commands::RunScript));
+		ScriptMgr::AddScript(std::make_unique<Script>(&Features::RunHeartbeatScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Features::SavePersonalVehicle::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Features::OpenGunLocker::RunScript));
 		ScriptMgr::AddScript(std::make_unique<Script>(&Features::OpenStreetDealerMenu::RunScript));
