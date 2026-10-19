@@ -6,6 +6,7 @@
 #include "game/frontend/submenus/Network/SavedPlayers.hpp"
 #include "game/frontend/submenus/Network/RandomEvents.hpp"
 #include "game/gta/Network.hpp"
+#include <chrono>
 
 namespace YimMenu::Submenus
 {
@@ -95,6 +96,7 @@ namespace YimMenu::Submenus
 		spoofMMRegion->AddItem(std::make_shared<ConditionalItem>("spoofmmregion"_J, std::make_shared<ListCommandItem>("mmregion"_J, "##mmregion")));
 		matchmakingGroup->AddItem(std::make_shared<ConditionalItem>("cheaterpool"_J, spoofMMRegion, true));
 		matchmakingGroup->AddItem(std::make_shared<BoolCommandItem>("spoofdatahash"_J));
+		matchmakingGroup->AddItem(std::make_shared<CommandItem>("learncleanhashes"_J));
 		spoofing->AddItem(matchmakingGroup);
 
 		auto matchmakingSrvGroup = std::make_shared<Group>("Matchmaking (Server)");
@@ -124,6 +126,11 @@ namespace YimMenu::Submenus
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_kicks"_J));
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_grief"_J));
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_cash"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_chat"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_lognet"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_logunknown"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_compat"_J));
 
 		auto attackLog = std::make_shared<Group>("Attack Log");
 		attackLog->AddItem(std::make_shared<ImGuiItem>([] {
@@ -139,6 +146,8 @@ namespace YimMenu::Submenus
 			{
 				for (auto& record : log)
 				{
+					auto age = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - record.LastSeen).count();
+
 					ImGui::Text("%s", record.PlayerName.c_str());
 					ImGui::SameLine();
 					ImGui::TextDisabled("- %s", record.EventName.c_str());
@@ -146,6 +155,11 @@ namespace YimMenu::Submenus
 					{
 						ImGui::SameLine();
 						ImGui::TextDisabled(" x%d", record.Count);
+					}
+					if (age > 0 && age < 120)
+					{
+						ImGui::SameLine();
+						ImGui::TextDisabled(" (%llds ago)", static_cast<long long>(age));
 					}
 				}
 			}
@@ -156,6 +170,7 @@ namespace YimMenu::Submenus
 		}));
 
 		protections->AddItem(toggles);
+
 		protections->AddItem(attackLog);
 		AddCategory(std::move(protections));
 

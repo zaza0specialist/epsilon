@@ -56,6 +56,8 @@ namespace YimMenu
 	public:
 		explicit BoolCommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt);
 		void Draw() override;
+		std::optional<ToggleRow> GetToggleRow() const override;
+		bool SetToggleState(bool state) override;
 
 	private:
 		BoolCommand* m_Command;
@@ -156,6 +158,11 @@ namespace YimMenu
 		const std::string& GetName() const
 		{
 			return m_Name;
+		}
+
+	const std::vector<std::shared_ptr<UIItem>>& GetItems() const
+		{
+			return m_Items;
 		}
 
 	private:

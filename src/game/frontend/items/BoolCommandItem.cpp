@@ -12,6 +12,27 @@ namespace YimMenu
 	{
 	}
 
+	std::optional<UIItem::ToggleRow> BoolCommandItem::GetToggleRow() const
+	{
+		if (!m_Command)
+			return std::nullopt;
+
+		UIItem::ToggleRow row;
+		row.Label = m_LabelOverride.has_value() ? *m_LabelOverride : m_Command->GetLabel();
+		row.Description = m_Command->GetDescription();
+		row.State = m_Command->GetState();
+		return row;
+	}
+
+	bool BoolCommandItem::SetToggleState(bool state)
+	{
+		if (!m_Command)
+			return false;
+
+		m_Command->SetState(state);
+		return true;
+	}
+
 	void BoolCommandItem::Draw()
 	{
 		if (!m_Command)

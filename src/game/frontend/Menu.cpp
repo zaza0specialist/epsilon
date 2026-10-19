@@ -78,6 +78,28 @@ namespace YimMenu
 		return font;
 	}
 
+	static std::filesystem::path FindFirstExistingFont(const std::vector<std::filesystem::path>& candidates)
+	{
+		for (const auto& candidate : candidates)
+		{
+			std::error_code ec;
+			if (std::filesystem::exists(candidate, ec) && !ec)
+				return candidate;
+		}
+
+		return {};
+	}
+
+	static ImFont* LoadFontFile(ImGuiIO& io, const std::filesystem::path& path, float size)
+	{
+		if (path.empty())
+			return nullptr;
+
+		ImFontConfig cfg{};
+		cfg.FontDataOwnedByAtlas = false;
+		return io.Fonts->AddFontFromFileTTF(path.string().c_str(), size, &cfg, io.Fonts->GetGlyphRangesDefault());
+	}
+
 	void Menu::SetupFonts()
 	{
 		auto& IO = ImGui::GetIO();
@@ -98,6 +120,45 @@ namespace YimMenu
 		Menu::Font::g_AwesomeFont = IO.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Fonts::IconFont), sizeof(Fonts::IconFont), Menu::Font::g_AwesomeFontSize, &FontCfg, full_range);
 
 		UIManager::SetOptionsFont(Menu::Font::g_OptionsFont);
+
+		// Drop Inter-Regular.ttf / Inter-SemiBold.ttf and LiberationSerif-Regular.ttf into
+		// %APPDATA%\Epsilon\fonts to get the intended Epsilon look; otherwise we fall back to
+		// Times New Roman from the Windows font directory, then to the bundled font.
+		const auto fontDir = std::filesystem::path(std::getenv("appdata")) / "Epsilon" / "fonts";
+		const auto winFonts = std::filesystem::path(std::getenv("SYSTEMROOT")) / "Fonts";
+
+		const auto uiFontPath = FindFirstExistingFont({
+		    fontDir / "Inter-Regular.ttf",
+		    fontDir / "inter.ttf",
+		    winFonts / "Inter-Regular.ttf",
+		    winFonts / "Inter.ttf",
+		    winFonts / "segoeui.ttf",
+		    winFonts / "tahoma.ttf",
+		});
+
+		const auto serifFontPath = FindFirstExistingFont({
+		    fontDir / "LiberationSerif-Regular.ttf",
+		    winFonts / "times.ttf",
+		    winFonts / "LiberationSerif-Regular.ttf",
+		});
+
+		if (auto uiFont = LoadFontFile(IO, uiFontPath, Menu::Font::g_EpsilonUIFontSize))
+			Menu::Font::g_EpsilonUIFont = uiFont;
+		else
+			Menu::Font::g_EpsilonUIFont = Menu::Font::g_OptionsFont;
+
+		if (auto serifFont = LoadFontFile(IO, serifFontPath, Menu::Font::g_EpsilonSerifFontSize))
+			Menu::Font::g_EpsilonSerifFont = serifFont;
+		else
+			Menu::Font::g_EpsilonSerifFont = Menu::Font::g_DefaultFont;
+
+		IO.Fonts->Build();
+
+		if (auto notificationFont = LoadFontFile(IO, uiFontPath, 15.0f))
+			Menu::Font::g_NotificationFont = notificationFont;
+		else
+			Menu::Font::g_NotificationFont = Menu::Font::g_OptionsFont;
+
 		Renderer::SetFontsUpdated();
 	}
 }

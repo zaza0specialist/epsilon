@@ -10,6 +10,7 @@ namespace YimMenu::Features
 		{1, "Modern"},
 		{2, "Modern (Vertical)"},
 	    {3, "Modern (Modular)"},
+	    {4, "Epsilon"},
 	};
 
 	// Expose as global reference so other code can use it
@@ -18,7 +19,7 @@ namespace YimMenu::Features
 		"UI Style",
 		"Choose the UI style",
 		g_StyleOptions,
-		0};
+		4};
 }
 
 namespace YimMenu
@@ -62,6 +63,9 @@ namespace YimMenu
 			break;
 		case UITheme::Modular:
 			RenderModularTheme();
+			break;
+		case UITheme::Epsilon:
+			RenderEpsilonTheme();
 			break;
 		default:
 			RenderClassicTheme(); // Default theme

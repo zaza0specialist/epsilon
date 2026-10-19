@@ -12,6 +12,8 @@
 #include "game/gta/invoker/Invoker.hpp"
 #include "game/gta/Natives.hpp"
 
+#include <algorithm>
+
 namespace
 {
 	// Human
@@ -39,10 +41,14 @@ namespace YimMenu::Features
 	BoolCommand _ESPName("espnameplayers", "Show Player Name", "Should the ESP draw player names?");
 	BoolCommand _ESPDistance("espdistanceplayers", "Show Player Distance", "Should the ESP draw player distance?");
 	BoolCommand _ESPSkeleton("espskeletonplayers", "Show Player Skeleton", "Should the ESP draw player skeletons?");
+	BoolCommand _ESPBoxPlayers("espboxplayers", "Show Player Box", "Should the ESP draw a 2D box around players?");
+	BoolCommand _ESPHealthBarPlayers("esphealthbarplayers", "Show Player Health Bar", "Should the ESP draw a health bar for players?");
+	BoolCommand _ESPArmorBarPlayers("esparmorbarplayers", "Show Player Armor Bar", "Should the ESP draw an armor bar for players?");
 
 	ColorCommand _NameColorPlayers("namecolorplayers", "Player Name Color", "Changes the color of the name ESP for players", ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
 	ColorCommand _DistanceColorPlayers("distancecolorplayers", "Player Distance Color", "Changes the color of the distance ESP for players", ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
 	ColorCommand _SkeletonColorPlayers("skeletoncolorplayers", "Player Skeleton Color", "Changes the color of the skeleton ESP for players", ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
+	ColorCommand _BoxColorPlayers("boxcolorplayers", "Player Box Color", "Changes the color of the 2D box for players", ImVec4{0.549f, 0.682f, 0.851f, 1.0f});
 
 	// Peds
 	BoolCommand _ESPDrawPeds("espdrawpeds", "Draw Peds", "Should the ESP draw peds?");
@@ -53,9 +59,13 @@ namespace YimMenu::Features
 	BoolCommand _ESPScriptInfoPeds("espscriptinfopeds", "Show Ped Script Info", "Should the ESP draw script info?");
 	BoolCommand _ESPDistancePeds("espdistancepeds", "Show Ped Distance", "Should the ESP draw distance?");
 	BoolCommand _ESPSkeletonPeds("espskeletonpeds", "Show Ped Skeleton", "Should the ESP draw the skeleton?");
+	BoolCommand _ESPBoxPeds("espboxpeds", "Show Ped Box", "Should the ESP draw a 2D box around peds?");
+	BoolCommand _ESPHealthBarPeds("esphealthbarpeds", "Show Ped Health Bar", "Should the ESP draw a health bar for peds?");
+	BoolCommand _ESPArmorBarPeds("esparmorbarpeds", "Show Ped Armor Bar", "Should the ESP draw an armor bar for peds?");
 
 	ColorCommand _HashColorPeds("hashcolorpeds", "Ped Hash Color", "Changes the color of the hash ESP for peds", ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
 	ColorCommand _SkeletonColorPeds("skeletoncolorpeds", "Ped Skeleton Color", "Changes the color of the skeleton ESP for peds", ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
+	ColorCommand _BoxColorPeds("boxcolorpeds", "Ped Box Color", "Changes the color of the 2D box for peds", ImVec4{0.549f, 0.682f, 0.851f, 1.0f});
 
 	// Objects
 	BoolCommand _ESPDrawObjects("espdrawobjects", "Draw Special Objects", "Should the ESP draw special objects?");
@@ -138,6 +148,100 @@ namespace YimMenu
 		drawBoneLine(rightKneeBone, rightFootBone);
 	}
 
+	struct ScreenBox
+	{
+		ImVec2 min, max;
+	};
+
+	static std::optional<ScreenBox> GetEntityScreenBox(Ped ped)
+	{
+		auto head = worldToScreen(ped.GetBonePosition(headBone));
+		auto leftFoot = worldToScreen(ped.GetBonePosition(leftFootBone));
+		auto rightFoot = worldToScreen(ped.GetBonePosition(rightFootBone));
+		auto leftHand = worldToScreen(ped.GetBonePosition(leftHandBone));
+		auto rightHand = worldToScreen(ped.GetBonePosition(rightHandBone));
+
+		if (!head || !leftFoot || !rightFoot)
+			return std::nullopt;
+
+		float minX = head->x, maxX = head->x;
+		float minY = head->y, maxY = head->y;
+
+		auto extend = [&](const ImVec2& p) {
+			minX = (std::min)(minX, p.x);
+			maxX = (std::max)(maxX, p.x);
+			minY = (std::min)(minY, p.y);
+			maxY = (std::max)(maxY, p.y);
+		};
+
+		extend(*leftFoot);
+		extend(*rightFoot);
+		if (leftHand)
+			extend(*leftHand);
+		if (rightHand)
+			extend(*rightHand);
+
+		// slight padding so the box doesn't hug the bones exactly
+		const float padX = (maxX - minX) * 0.08f + 2.0f;
+		const float padY = (maxY - minY) * 0.04f + 2.0f;
+
+		return ScreenBox{{minX - padX, minY - padY}, {maxX + padX, maxY + padY}};
+	}
+
+	static void DrawBox(ImDrawList* drawList, const ScreenBox& box, ImU32 color)
+	{
+		drawList->AddRect(box.min, box.max, color, 0.0f, 0, 1.5f);
+	}
+
+	static void DrawHealthBars(ImDrawList* drawList, const ScreenBox& box, Ped ped, bool drawHealth, bool drawArmor, int maxArmor)
+	{
+		const float boxHeight = box.max.y - box.min.y;
+		if (boxHeight <= 1.0f)
+			return;
+
+		const float barWidth = 4.0f;
+		const float gap = 2.0f;
+
+		if (drawHealth)
+		{
+			const int maxHealth = ped.GetMaxHealth();
+			if (maxHealth > 0)
+			{
+				float healthRatio = (std::clamp)(ped.GetHealth() / (float)maxHealth, 0.0f, 1.0f);
+				ImU32 healthColor;
+				if (healthRatio > 0.5f)
+					healthColor = ImGui::ColorConvertFloat4ToU32(health_green);
+				else if (healthRatio > 0.25f)
+					healthColor = ImGui::ColorConvertFloat4ToU32(health_yellow);
+				else
+					healthColor = ImGui::ColorConvertFloat4ToU32(health_red);
+
+				const float fillHeight = boxHeight * healthRatio;
+				const ImVec2 bgMin{box.min.x - gap - barWidth, box.min.y};
+				const ImVec2 bgMax{box.min.x - gap, box.max.y};
+				const ImVec2 fillMin{bgMin.x, bgMax.y - fillHeight};
+
+				drawList->AddRectFilled(bgMin, bgMax, ImGui::ColorConvertFloat4ToU32(death_bg));
+				drawList->AddRectFilled(fillMin, bgMax, healthColor);
+			}
+		}
+
+		if (drawArmor && maxArmor > 0)
+		{
+			float armorRatio = (std::clamp)(ped.GetArmour() / (float)maxArmor, 0.0f, 1.0f);
+			if (armorRatio > 0.0f)
+			{
+				const float fillHeight = boxHeight * armorRatio;
+				const ImVec2 bgMin{box.max.x + gap, box.min.y};
+				const ImVec2 bgMax{box.max.x + gap + barWidth, box.max.y};
+				const ImVec2 fillMin{bgMin.x, bgMax.y - fillHeight};
+
+				drawList->AddRectFilled(bgMin, bgMax, ImGui::ColorConvertFloat4ToU32(armor_blue_bg));
+				drawList->AddRectFilled(fillMin, bgMax, ImGui::ColorConvertFloat4ToU32(armor_blue));
+			}
+		}
+	}
+
 	//TODO : Very bare bones currently, expand and possibly refactor
 	static void DrawPlayer(Player plyr, ImDrawList* drawList)
 	{
@@ -171,7 +275,24 @@ namespace YimMenu
 				drawList->AddText({headScreen->x, headScreen->y + 20}, colorBasedOnDistance, distanceStr.c_str());
 		}
 
-		//TODO Boxes, Distance colors, Friendlies, Tracers, Health bars
+		//TODO Distance colors, Friendlies, Tracers
+
+		if (Features::_ESPBoxPlayers.GetState() || Features::_ESPHealthBarPlayers.GetState() || Features::_ESPArmorBarPlayers.GetState())
+		{
+			if (auto box = GetEntityScreenBox(plyr.GetPed()))
+			{
+				if (Features::_ESPBoxPlayers.GetState())
+					DrawBox(drawList, *box, ImGui::ColorConvertFloat4ToU32(Features::_BoxColorPlayers.GetState()));
+
+				if (Features::_ESPHealthBarPlayers.GetState() || Features::_ESPArmorBarPlayers.GetState())
+				{
+					int maxArmor = 100;
+					if (auto maxArmour = plyr.GetMaxArmour(); maxArmour > 0)
+						maxArmor = maxArmour;
+					DrawHealthBars(drawList, *box, plyr.GetPed(), Features::_ESPHealthBarPlayers.GetState(), Features::_ESPArmorBarPlayers.GetState(), maxArmor);
+				}
+			}
+		}
 
 		if (Features::_ESPSkeleton.GetState() /* && !plyr.GetPed().IsAnimal() */) // yes, this is neccesary.
 		{
@@ -239,7 +360,19 @@ namespace YimMenu
 				drawList->AddText({headScreen->x, headScreen->y + 20}, colorBasedOnDistance, distanceStr.c_str());
 		}
 
-		//TODO Boxes, Distance colors, Tracers, Health bars
+		//TODO Distance colors, Tracers
+
+		if (Features::_ESPBoxPeds.GetState() || Features::_ESPHealthBarPeds.GetState() || Features::_ESPArmorBarPeds.GetState())
+		{
+			if (auto box = GetEntityScreenBox(ped))
+			{
+				if (Features::_ESPBoxPeds.GetState())
+					DrawBox(drawList, *box, ImGui::ColorConvertFloat4ToU32(Features::_BoxColorPeds.GetState()));
+
+				if (Features::_ESPHealthBarPeds.GetState() || Features::_ESPArmorBarPeds.GetState())
+					DrawHealthBars(drawList, *box, ped, Features::_ESPHealthBarPeds.GetState(), Features::_ESPArmorBarPeds.GetState(), 100);
+			}
+		}
 
 		if (Features::_ESPSkeletonPeds.GetState() /* && !ped.IsAnimal() */)
 		{

@@ -86,7 +86,7 @@ namespace YimMenu
 		if (!Pointers.LateInit())
 			LOG(WARNING) << "Socialclub patterns failed to load";
 
-		Notifications::Show("Epsilon", "Loaded succesfully", NotificationType::Success);
+		Notifications::Show("Epsilon V1.0.0b", "Loaded succesfully", NotificationType::Success);
 
 		if (InWine().value_or(false))
 		    LOG(INFO) << "Running in Wine!";

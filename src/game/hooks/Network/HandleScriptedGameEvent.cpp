@@ -8,6 +8,8 @@
 #include "types/script/ScriptEvent.hpp"
 #include "core/scripting/LuaManager.hpp"
 #include "core/scripting/LuaUtils.hpp"
+#include "core/commands/BoolCommand.hpp"
+#include "core/commands/Commands.hpp"
 #include "core/util/Joaat.hpp"
 
 namespace YimMenu::Hooks
@@ -35,10 +37,17 @@ namespace YimMenu::Hooks
 		if (!CheckLuaScripts(player, event))
 			return false;
 
+		// Compatibility Mode: never block, only observe (Protections logs what it would have done)
+		if (auto compat = Commands::GetCommand<BoolCommand>("prot_compat"_J); compat && compat->GetState())
+			return true;
+
 		SCRIPT_EVENT* script_event = reinterpret_cast<SCRIPT_EVENT*>(event.m_Args);
 
 		if (Protections::ShouldBlockEvent(player, script_event->GetEventIndex()))
 			return false;
+
+		if (!Protections::IsKnownEvent(script_event->GetEventIndex()))
+			Protections::LogUnknownScriptEvent(player, script_event->GetEventIndex(), event.m_Args, static_cast<int>(event.m_ArgsSize / 8));
 
 		switch (static_cast<ScriptEventIndex>(script_event->GetEventIndex()))
 		{

@@ -51,8 +51,8 @@ namespace YimMenu::Submenus
 		auto game = std::make_shared<Category>("Game");
 
 		auto uiStyle = std::make_shared<Group>("UI");
-		auto playerEsp = std::make_shared<Group>("Player ESP", 10);
-		auto pedEsp = std::make_shared<Group>("Ped ESP", 10);
+		auto playerEsp = std::make_shared<Group>("Player ESP", 12);
+		auto pedEsp = std::make_shared<Group>("Ped ESP", 12);
 		auto objectEsp = std::make_shared<Group>("Object ESP");
 		auto overlay = std::make_shared<Group>("Overlay");
 		auto chat = std::make_shared<Group>("Chat");
@@ -73,6 +73,12 @@ namespace YimMenu::Submenus
 		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("espskeletonplayers"_J, "Player Skeleton")));
 		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<ColorCommandItem>("skeletoncolorplayers"_J)));
 
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("espboxplayers"_J, "Player Box")));
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espboxplayers"_J, std::make_shared<ColorCommandItem>("boxcolorplayers"_J)));
+
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("esphealthbarplayers"_J, "Player Health Bar")));
+		playerEsp->AddItem(std::make_shared<ConditionalItem>("espdrawplayers"_J, std::make_shared<BoolCommandItem>("esparmorbarplayers"_J, "Player Armor Bar")));
+
 		// Peds
 		pedEsp->AddItem(std::make_shared<BoolCommandItem>("espdrawpeds"_J));
 		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("espdrawdeadpeds"_J)));
@@ -87,6 +93,12 @@ namespace YimMenu::Submenus
 
 		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("espskeletonpeds"_J, "Ped Skeleton")));
 		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<ColorCommandItem>("skeletoncolorpeds"_J)));
+
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("espboxpeds"_J, "Ped Box")));
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espboxpeds"_J, std::make_shared<ColorCommandItem>("boxcolorpeds"_J)));
+
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("esphealthbarpeds"_J, "Ped Health Bar")));
+		pedEsp->AddItem(std::make_shared<ConditionalItem>("espdrawpeds"_J, std::make_shared<BoolCommandItem>("esparmorbarpeds"_J, "Ped Armor Bar")));
 
 		objectEsp->AddItem(std::make_shared<BoolCommandItem>("espdrawobjects"_J));
 		objectEsp->AddItem(std::make_shared<ConditionalItem>("espdrawobjects"_J, std::make_shared<ColorCommandItem>("hashcolorobjects"_J)));
