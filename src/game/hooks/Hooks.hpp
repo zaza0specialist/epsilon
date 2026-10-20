@@ -78,6 +78,7 @@ namespace YimMenu::Hooks
 	namespace Network
 	{
 		extern void ReceiveNetMessage(void* a1, rage::netConnectionManager* mgr, rage::netEvent* event);
+		extern void QueuePacket(rage::netConnectionManager* mgr, int msg_id, void* data, int size, int flags, std::uint16_t* out_seq_id);
 		extern void ReceiveNetGameEvent(Player player, uint16_t event_id, uint32_t event_index, uint32_t event_handled_bits, rage::datBitBuffer& buffer);
 		extern bool HandleScriptedGameEvent(Player player, CScriptedGameEvent& event);
 		extern uint32_t GetDLCHash(void* manager, uint32_t seed);

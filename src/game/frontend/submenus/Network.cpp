@@ -2,6 +2,7 @@
 #include "core/backend/FiberPool.hpp"
 #include "core/frontend/Notifications.hpp"
 #include "game/backend/Protections.hpp"
+#include "game/backend/NetTrace.hpp"
 #include "game/frontend/items/Items.hpp"
 #include "game/frontend/submenus/Network/SavedPlayers.hpp"
 #include "game/frontend/submenus/Network/RandomEvents.hpp"
@@ -132,6 +133,21 @@ namespace YimMenu::Submenus
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_logunknown"_J));
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_compat"_J));
 
+		// Master network tracer and its per channel switches.
+		auto trace = std::make_shared<Group>("Network Trace");
+		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace"_J));
+		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace_msg"_J));
+		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace_sent"_J));
+		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace_event"_J));
+		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace_script"_J));
+		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace_session"_J));
+		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace_battleye"_J));
+		trace->AddItem(std::make_shared<ImGuiItem>([] {
+			ImGui::TextDisabled("Trace file:");
+			ImGui::SameLine();
+			ImGui::TextUnformatted(NetTrace::FilePath().c_str());
+		}));
+
 		auto attackLog = std::make_shared<Group>("Attack Log");
 		attackLog->AddItem(std::make_shared<ImGuiItem>([] {
 			auto log = Protections::GetAttackLog();
@@ -170,6 +186,8 @@ namespace YimMenu::Submenus
 		}));
 
 		protections->AddItem(toggles);
+
+		protections->AddItem(trace);
 
 		protections->AddItem(attackLog);
 		AddCategory(std::move(protections));

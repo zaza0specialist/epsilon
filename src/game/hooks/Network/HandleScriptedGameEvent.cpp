@@ -1,4 +1,5 @@
 #include "game/backend/Protections.hpp"
+#include "game/backend/NetTrace.hpp"
 #include "game/backend/Self.hpp"
 #include "game/hooks/Hooks.hpp"
 #include "game/pointers/Pointers.hpp"
@@ -37,11 +38,25 @@ namespace YimMenu::Hooks
 		if (!CheckLuaScripts(player, event))
 			return false;
 
+		SCRIPT_EVENT* script_event = reinterpret_cast<SCRIPT_EVENT*>(event.m_Args);
+
+		if (NetTrace::Enabled(NetTrace::Channel::Script))
+		{
+			const int argc = static_cast<int>(event.m_ArgsSize / 8);
+			const int index = script_event->GetEventIndex();
+
+			std::string args;
+			for (int i = 0; i < argc && i < 12; i++)
+				args += std::format(" {}:0x{:X}", i, static_cast<std::uint64_t>(event.m_Args[i]));
+
+			NetTrace::Log(NetTrace::Channel::Script,
+			    std::format("hash=0x{:X} (signed {}) from={} argc={}{}", index, index, player.GetName(), argc, args));
+		}
+
 		// Compatibility Mode: never block, only observe (Protections logs what it would have done)
 		if (auto compat = Commands::GetCommand<BoolCommand>("prot_compat"_J); compat && compat->GetState())
 			return true;
 
-		SCRIPT_EVENT* script_event = reinterpret_cast<SCRIPT_EVENT*>(event.m_Args);
 
 		if (Protections::ShouldBlockEvent(player, script_event->GetEventIndex()))
 			return false;

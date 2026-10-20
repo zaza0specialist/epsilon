@@ -120,4 +120,7 @@ namespace rage
 			BattlEyeCmd = 0x8F,
 		};
 	};
+
+	// Human readable name for a message type, used by the network trace.
+	const char* GetNetMessageName(netMessage::Type type);
 }

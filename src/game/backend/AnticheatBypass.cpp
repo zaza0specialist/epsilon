@@ -2,6 +2,7 @@
 #include "core/backend/ScriptMgr.hpp"
 #include "core/memory/ModuleMgr.hpp"
 #include "core/util/Joaat.hpp"
+#include "game/backend/NetTrace.hpp"
 #include "game/pointers/Pointers.hpp"
 #include "game/backend/NativeHooks.hpp"
 #include "game/gta/Natives.hpp"
@@ -900,6 +901,7 @@ namespace YimMenu
 			mode = "FSL";
 
 		LOGF(VERBOSE, "Anticheat bypass mode: {}", mode);
+		NetTrace::BattlEye(std::format("mode={}", mode));
 
 		if (m_IsFSLLoaded)
 		{

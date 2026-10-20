@@ -22,6 +22,7 @@
 #include "game/backend/Tunables.hpp"
 #include "game/backend/ScriptPointers.hpp"
 #include "game/backend/Heartbeat.hpp"
+#include "game/backend/NetTrace.hpp"
 #include "game/frontend/GUI.hpp"
 #include "game/pointers/Pointers.hpp"
 #include "game/features/vehicle/SavePersonalVehicle.hpp"
@@ -36,6 +37,7 @@ namespace YimMenu
 		FileMgr::Init(documents);
 
 		LogHelper::Init("Epsilon", FileMgr::GetProjectFile("./cout.log"));
+		NetTrace::Init();
 
 		LOGF(INFO, "Welcome to Epsilon! Build date: {} at {}", __DATE__, __TIME__);
 
@@ -108,6 +110,7 @@ namespace YimMenu
 		g_Running = false;
 		D3D12Hook::Destroy(true);
 		Renderer::Destroy();
+		NetTrace::Shutdown();
 		LogHelper::Destroy();
 
 		CloseHandle(g_MainThread);

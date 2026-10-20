@@ -3,6 +3,7 @@
 #include "core/commands/Commands.hpp"
 #include "core/util/Joaat.hpp"
 #include "game/backend/Protections.hpp"
+#include "game/backend/NetTrace.hpp"
 #include "game/backend/Self.hpp"
 #include "game/gta/Natives.hpp"
 #include "game/hooks/Hooks.hpp"
@@ -634,6 +635,18 @@ namespace YimMenu::Hooks
 		// event_index repeats across retransmissions — identical idx in a burst = the sender is re-trying
 		if (auto cmd = Commands::GetCommand<BoolCommand>("prot_lognet"_J); cmd && cmd->GetState())
 			LOGF(WARNING, "NetEvent id={} idx={} bits=0x{:02X} from {}", event_id, event_index, event_handled_bits, player.GetName());
+
+		if (NetTrace::Enabled(NetTrace::Channel::Event))
+		{
+			// The buffer is consumed by the protection checks below, so the payload is
+			// read from a copy of it and never from the live one.
+			std::string payload;
+			NetTrace::AppendHex(payload, buffer.m_Data, buffer.m_CurBit / 8, 32);
+
+			NetTrace::Log(NetTrace::Channel::Event,
+			    std::format("id={} idx={} bits=0x{:02X} from={}{}", event_id, event_index, event_handled_bits,
+			                player.GetName(), payload.empty() ? "" : " data=" + payload));
+		}
 
 		if (!ShouldAllowNetEvent(player, event_id, buffer))
 			SendEventAck(*Pointers.NetEventMgr, player.GetHandle(), Self::GetPlayer().GetHandle(), event_index, event_handled_bits);

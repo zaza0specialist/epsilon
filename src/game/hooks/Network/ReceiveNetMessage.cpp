@@ -3,6 +3,7 @@
 #include "core/commands/Commands.hpp"
 #include "core/scripting/LuaManager.hpp"
 #include "game/backend/AnticheatBypass.hpp"
+#include "game/backend/NetTrace.hpp"
 #include "game/backend/Players.hpp"
 #include "game/backend/Protections.hpp"
 #include "game/frontend/ChatDisplay.hpp"
@@ -40,6 +41,20 @@ namespace YimMenu::Hooks
 		rage::datBitBuffer buffer(fr_evt->m_Data, fr_evt->m_Length, true);
 
 		rage::netMessage::Type type = ReadType(buffer).value_or(rage::netMessage::Type::Invalid);
+
+		if (NetTrace::Enabled(NetTrace::Channel::Message))
+		{
+			std::string sender = "session";
+			if (auto p = Players::GetByMessageId(fr_evt->m_MsgId))
+				sender = p.GetName();
+
+			std::string payload;
+			NetTrace::AppendHex(payload, fr_evt->m_Data, fr_evt->m_Length, 24);
+
+			NetTrace::Message(std::format("{} (0x{:02X}) len={} from={}{}", rage::GetNetMessageName(type),
+			                             static_cast<int>(type), fr_evt->m_Length, sender,
+			                             payload.empty() ? "" : " data=" + payload));
+		}
 
 		switch (type)
 		{
@@ -206,6 +221,14 @@ namespace YimMenu::Hooks
 				if (log_be)
 					LOGF(WARNING, "BattlEyeCmd size={} from_client={} op=0x{:02X} b1=0x{:02X}", size, from_client,
 					    size > 0 ? static_cast<unsigned char>(data[0]) : 0, size > 1 ? static_cast<unsigned char>(data[1]) : 0);
+
+				if (NetTrace::Enabled(NetTrace::Channel::BattlEye))
+				{
+					std::string payload;
+					NetTrace::AppendHex(payload, data, static_cast<std::size_t>(size > 0 ? size : 0), 32);
+
+					NetTrace::BattlEye(std::format("cmd size={} from_client={} data={}", size, from_client, payload));
+				}
 
 				if (from_client)
 					break;
