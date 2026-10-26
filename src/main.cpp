@@ -39,6 +39,17 @@ namespace YimMenu
 		LogHelper::Init("Epsilon", FileMgr::GetProjectFile("./cout.log"));
 		NetTrace::Init();
 
+		// baby-blue ascii art splash for the console window
+		std::cout << "\x1b[38;2;140;174;217m";
+		std::cout << " ██████╗ ███████╗ ██████╗ ████████╗ ██████╗ \n";
+		std::cout << "██╔════╝ ██╔════╝██╔═══██╗╚══██╔══╝██╔═══██╗\n";
+		std::cout << "██║  ███╗█████╗  ███████╗   ██║   ███████║\n";
+		std::cout << "██║   ██║██╔══╝  ██╔═══██╗   ██║   ██╔══██║\n";
+		std::cout << "╚██████╔╝██████╗ ╚██████╔╝   ██║   ██║  ██║\n";
+		std::cout << " ╚═════╝ ╚══════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═╝\n";
+		std::cout << "              ε   Kifflom, brother\n";
+		std::cout << "\x1b[0m";
+
 		LOGF(INFO, "Welcome to Epsilon! Build date: {} at {}", __DATE__, __TIME__);
 
 		g_HotkeySystem.RegisterCommands();
