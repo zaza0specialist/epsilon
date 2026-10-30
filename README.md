@@ -1,10 +1,10 @@
 # Epsilon
 
-**Status:** Active — private fork of YimMenu v2 for GTA V: Enhanced.
+**Status:** Active — public fork of YimMenu v2 for GTA V: Enhanced.
 
 > ⚠️ **Important:** This repository is the **only** official source for Epsilon. The website **epsilonmenu.com** and any file named `EpsilonMenu.exe` are **not associated with this project**, are not made by us, and should not be trusted. Do not run executables from that site.
 
-A private fork of [YimMenu v2](https://github.com/YimMenu/YimMenuV2) for GTA V: Enhanced, carrying our own interface theme and our own network protections.
+A public fork of [YimMenu v2](https://github.com/YimMenu/YimMenuV2) for GTA V: Enhanced, carrying our own interface theme and our own network protections.
 
 Epsilon keeps the upstream YimMenu v2 codebase and adds three things to it:
 
@@ -12,11 +12,11 @@ Epsilon keeps the upstream YimMenu v2 codebase and adds three things to it:
 - **Network protections** — blocking for the script and net events used to grief, kick, spam and cash-drop abuse, with a reason recorded for every block.
 - **Diagnostics** — a compatibility mode that blocks nothing but logs every event, plus a per-player leave summary reporting how long a player stayed and which protections intervened.
 
-> This repository is private and for personal use. Modifying a networked game may violate the publisher's terms of service, and anti-cheat systems actively target modified clients. Use it at your own risk.
+> This repository is public and for personal use. Modifying a networked game may violate the publisher's terms of service, and anti-cheat systems actively target modified clients. Use it at your own risk.
 
 | Status | Value |
 |--------|-------|
-| Project | Active (private fork) |
+| Project | Active (public fork) |
 | Base | YimMenu v2 (upstream `enhanced` branch) |
 | Game | GTA V: Enhanced |
 | BattlEye | Host BE off; BE-on peers may be dropped (~2 min) |
