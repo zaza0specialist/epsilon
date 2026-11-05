@@ -28,6 +28,7 @@
 #include "game/features/vehicle/SavePersonalVehicle.hpp"
 #include "game/features/self/OpenGunLocker.hpp"
 #include "game/features/recovery/DailyActivities.hpp"
+#include "game/features/recovery/Wardrobe.hpp"
 
 namespace YimMenu
 {
@@ -58,6 +59,7 @@ namespace YimMenu
 		g_HotkeySystem.RegisterCommands();
 		SavedLocations::FetchSavedLocations();
 		Settings::Initialize(FileMgr::GetProjectFile("./settings.json"));
+	Settings::AddComponent(&YimMenu::Wardrobe::GetInstance());
 
 		if (!ModuleMgr.LoadModules())
 			goto EARLY_UNLOAD;

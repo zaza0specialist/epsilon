@@ -4,6 +4,7 @@
 #include "core/commands/HotkeySystem.hpp"
 #include "core/commands/LoopedCommand.hpp"
 #include "game/backend/Self.hpp"
+#include "game/features/recovery/Wardrobe.hpp"
 #include "game/frontend/items/Items.hpp"
 #include "game/frontend/items/DrawHotkey.hpp"
 #include "game/frontend/submenus/Settings/LuaScripts.hpp"
@@ -138,6 +139,54 @@ namespace YimMenu::Submenus
 		game->AddItem(pedEsp);
 		game->AddItem(objectEsp);
 
+		// Wardrobe
+		auto wardrobe = std::make_shared<Category>("Wardrobe");
+		wardrobe->AddItem(std::make_shared<ImGuiItem>([] {
+			auto& w = YimMenu::Wardrobe::GetInstance();
+			
+			ImGui::Text("Wardrobe Slots (21)");
+			ImGui::Spacing();
+			
+			static char nameBuf[21][64] = {};
+			
+			for (int i = 0; i < 21; i++)
+			{
+				ImGui::PushID(i);
+				auto& slot = w.GetSlot(i);
+				
+				strncpy(nameBuf[i], slot.name.c_str(), sizeof(nameBuf[i]) - 1);
+				nameBuf[i][sizeof(nameBuf[i]) - 1] = '\0';
+				
+				ImGui::PushItemWidth(140.0f);
+				if (ImGui::InputText("##name", nameBuf[i], sizeof(nameBuf[i]))) {
+					w.SetSlotName(i, nameBuf[i]);
+				}
+				ImGui::PopItemWidth();
+				
+				ImGui::SameLine();
+				if (ImGui::Button("SAVE")) {
+					w.SaveSlot(i);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("LOAD")) {
+					w.ApplySlot(i);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("CLEAR")) {
+					w.ClearSlot(i);
+				}
+				
+				ImGui::SameLine();
+				if (slot.hasData) {
+					ImGui::TextColored(ImVec4(0, 1, 0, 1), "Saved");
+				} else {
+					ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1), "Empty");
+				}
+				
+				ImGui::PopID();
+			}
+		}));
+
 		gui->AddItem(uiStyle);
 		gui->AddItem(overlay);
 		gui->AddItem(chat);
@@ -145,6 +194,7 @@ namespace YimMenu::Submenus
 		AddCategory(std::move(hotkeys));
 		AddCategory(std::move(gui));
 		AddCategory(std::move(game));
+		AddCategory(std::move(wardrobe));
 		AddCategory(std::move(about));
 		AddCategory(DrawGUISettingsMenu());
 		AddCategory(BuildLuaScriptsMenu());
