@@ -133,6 +133,11 @@ namespace YimMenu::Submenus
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_logunknown"_J));
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_compat"_J));
 
+		// Anti-kick protections
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_anti_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_host_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_session_kick"_J));
+
 		// Crash protections
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_expl_crash"_J));
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_weapon_exp"_J));

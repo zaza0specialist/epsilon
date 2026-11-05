@@ -88,6 +88,14 @@ namespace YimMenu::Features
 	static BlockCrashBait _prot_crash_bait{"prot_crash_bait", "Crash Bait Guard", "Blocks crash bait script events", false};
 	static BlockRagdollNet _prot_ragdoll_net{"prot_ragdoll_net", "Anti Ragdoll Net", "Blocks ragdoll network events", false};
 
+	// Anti-kick protections
+	class BlockAutoKick : public BoolCommand { using BoolCommand::BoolCommand; };
+	class BlockHostKick : public BoolCommand { using BoolCommand::BoolCommand; };
+	class BlockSessionKick : public BoolCommand { using BoolCommand::BoolCommand; };
+	static BlockAutoKick _prot_anti_kick{"prot_anti_kick", "Anti Auto Kick", "Blocks NETWORK_SESSION_KICK_PLAYER from being sent", false};
+	static BlockHostKick _prot_host_kick{"prot_host_kick", "Anti Host Kick", "Blocks host kick attempts against your session", false};
+	static BlockSessionKick _prot_session_kick{"prot_session_kick", "Anti Session Kick", "Blocks session kick events from other players", false};
+
 	// Script event protections
 	static BlockModdedSessionEvents _prot_mod_session{"prot_mod_session", "Block Modded Session Events", "Blocks modded session script events", false};
 	static SmartProtection _prot_smart_prot{"prot_smart_prot", "Smart Protection", "Smart protection against unknown script events", false};
