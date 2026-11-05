@@ -75,7 +75,7 @@ Found under **Network → Protections**.
 `cout.log` records join and leave events, every blocked or logged event, and a summary line whenever a player disconnects:
 
 ```
-Epicok87 left after 94s - 2 protection triggers (Explosion (targeted ped), Request Control (ped))
+blobs left after 94s - 2 protection triggers (Explosion (targeted ped), Request Control (ped))
 ```
 
 A leave with **no protection triggers** means nothing on our side interfered with that player, which is the quickest way to separate our protections from anything else.
