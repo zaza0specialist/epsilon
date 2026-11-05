@@ -1,6 +1,6 @@
 # Contributing to Epsilon
 
-Epsilon is a private fork of [YimMenu v2](https://github.com/YimMenu/YimMenuV2) for GTA V: Enhanced. This guide covers the workflow for this fork. For the upstream project's own conventions, see the [YimMenu contribution guide](https://github.com/YimMenu/YimMenuV2/blob/enhanced/CONTRIBUTING.md).
+Epsilon is a Public fork of [YimMenu v2](https://github.com/YimMenu/YimMenuV2) for GTA V: Enhanced. This guide covers the workflow for this fork. For the upstream project's own conventions, see the [YimMenu contribution guide](https://github.com/YimMenu/YimMenuV2/blob/enhanced/CONTRIBUTING.md).
 
 There are no external pull requests. This repository is private and work happens locally.
 
