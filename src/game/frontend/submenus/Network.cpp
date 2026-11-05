@@ -162,6 +162,58 @@ namespace YimMenu::Submenus
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ctrl_swap"_J));
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_anti_crash"_J));
 
+		// Anti-spam protections
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_bounty_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ped_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_vehicle_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_explosion_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ptfx_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_sound_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_stun_gun_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_chat_ads"_J));
+
+		// Anti-trolling protections
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_modded_sounds"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_modded_ptfx"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_cages"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_remote_bounty"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_remote_clear_task"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_remote_ragdoll"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_remote_control"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_all_control"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_remove_weapon"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_give_weapon"_J));
+
+		// Local shields
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_expl_immunity"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_clear_proj"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_clear_particles"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_physics_guard"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_vehicle_ram"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_vehicle_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_stun_ragdoll"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_vehicle_guard"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_weapon_snapshot"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_weapon_guard"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_menu_crash_shield"_J));
+
+		// Script event guards
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_bounty"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_sms_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ceo_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_interior"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_anti_detection"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_anti_spam"_J));
+
+		// Other kick protections
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_freemode_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_script_host_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_end_session_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_net_error_kick"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_warn_direct"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_disable_cam_shake"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_notify_spectate"_J));
+
 		// Master network tracer and its per channel switches.
 		auto trace = std::make_shared<Group>("Network Trace");
 		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace"_J));
