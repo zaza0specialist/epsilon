@@ -133,6 +133,30 @@ namespace YimMenu::Submenus
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_logunknown"_J));
 		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_compat"_J));
 
+		// Crash protections
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_expl_crash"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_weapon_exp"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_radio_hijack"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_door_break"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_world_crash"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_entity_sync"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_net_crash"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_script_crash"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ent_state"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_crash_bait"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ragdoll_net"_J));
+
+		// Script event protections
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_mod_session"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_smart_prot"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_adv_script"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_mod_reports"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ent_spam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_anti_spectate"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_remote_cam"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_ctrl_swap"_J));
+		toggles->AddItem(std::make_shared<BoolCommandItem>("prot_anti_crash"_J));
+
 		// Master network tracer and its per channel switches.
 		auto trace = std::make_shared<Group>("Network Trace");
 		trace->AddItem(std::make_shared<BoolCommandItem>("nettrace"_J));
