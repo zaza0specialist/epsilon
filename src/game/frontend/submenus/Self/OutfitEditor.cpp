@@ -388,7 +388,11 @@ namespace YimMenu
 
 				ImGui::SameLine();
 				if (ImGui::SmallButton("Save"))
-					FiberPool::Push([&w, i] { w.SaveSlot(i); });
+					FiberPool::Push([&w, i] {
+						w.SaveSlot(i);
+						w.SetGameSlotName(i, w.GetSlotName(i));
+						Notifications::Show("Outfit", "Slot name saved.", NotificationType::Success);
+					});
 
 				ImGui::SameLine();
 				if (ImGui::SmallButton("Load"))

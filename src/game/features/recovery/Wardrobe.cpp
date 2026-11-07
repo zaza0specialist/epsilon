@@ -15,6 +15,22 @@ Wardrobe& Wardrobe::GetInstance()
     return instance;
 }
 
+void Wardrobe::SetGameSlotName(int slotIndex, const std::string& name)
+{
+    if (slotIndex < 0 || slotIndex >= 21) return;
+
+    // Game wardrobe outfit names live in Global_80145[slot * 14 + 8] as a 16-byte string
+    // (func_162 in wardrobe_mp.c stores names via TEXT_LABEL_ASSIGN_STRING at f_8)
+    auto global = ScriptGlobal(80145 + slotIndex * 14 + 8);
+    if (!global.CanAccess()) return;
+
+    auto& nameBuffer = global.As<char(&)[16]>();
+    std::memset(nameBuffer, 0, 16);
+    size_t copyLen = name.size() < 15 ? name.size() : 15;
+    std::memcpy(nameBuffer, name.c_str(), copyLen);
+    nameBuffer[copyLen] = '\0';
+}
+
 void Wardrobe::SaveOutfitToSlot(int slotIndex)
 {
     auto ped = PLAYER::PLAYER_PED_ID();

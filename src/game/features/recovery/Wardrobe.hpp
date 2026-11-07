@@ -2,8 +2,10 @@
 
 #include <array>
 #include <string>
+#include <cstring>
 
 #include "core/settings/IStateSerializer.hpp"
+#include "game/gta/ScriptGlobal.hpp"
 #include <nlohmann/json.hpp>
 
 namespace YimMenu
@@ -37,6 +39,7 @@ public:
     const WardrobeSlot& GetSlot(int index) const;
     std::string GetSlotName(int index) const;
     void SetSlotName(int index, const std::string& name);
+    void SetGameSlotName(int slotIndex, const std::string& name);
     bool HasSlotData(int index) const;
 
     // IStateSerializer
