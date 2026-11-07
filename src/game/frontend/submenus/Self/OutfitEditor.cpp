@@ -63,25 +63,37 @@ namespace YimMenu
 
 			std::string token = text.substr(start + 1, end - start - 1);
 			bool found = false;
-			for (const auto& [name, color] : GetOutfitTokens())
+			ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+			for (const auto& [name, c] : GetOutfitTokens())
 			{
 				if (token == name)
 				{
-					ImGui::TextColored(color, "%s", name);
-					ImGui::SameLine();
+					color = c;
 					found = true;
 					break;
 				}
 			}
 
-			if (!found)
-			{
-				std::string full = "~" + token + "~";
-				ImGui::TextUnformatted(full.c_str());
-				ImGui::SameLine();
-			}
+			if (found)
+				ImGui::PushStyleColor(ImGuiCol_Text, color);
 
-			pos = end + 1;
+			size_t nextStart = text.find('~', end + 1);
+			if (nextStart == std::string::npos)
+			{
+				ImGui::TextUnformatted(text.substr(end + 1).c_str());
+				if (found)
+					ImGui::PopStyleColor();
+				break;
+			}
+			else
+			{
+				ImGui::TextUnformatted(text.substr(end + 1, nextStart - end - 1).c_str());
+				if (found)
+					ImGui::PopStyleColor();
+				ImGui::SameLine();
+				pos = nextStart;
+				continue;
+			}
 		}
 	}
 
@@ -392,14 +404,14 @@ namespace YimMenu
 				else
 					ImGui::TextDisabled("empty");
 
-				// edit popup: name field + color token buttons (ID is scoped to this slot)
+				// edit popup: name field + color token buttons (per-slot popup ID)
 				if (openSlot == i)
 				{
-					ImGui::OpenPopup("Edit Slot Name");
+					ImGui::OpenPopup(("Edit Slot Name##" + std::to_string(i)).c_str());
 					openSlot = -1;
 				}
 
-				if (ImGui::BeginPopup("Edit Slot Name"))
+				if (ImGui::BeginPopup(("Edit Slot Name##" + std::to_string(i)).c_str()))
 				{
 					ImGui::Text("Slot %02d name", i + 1);
 					ImGui::SetNextItemWidth(320);
