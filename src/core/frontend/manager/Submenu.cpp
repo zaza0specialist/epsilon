@@ -60,25 +60,4 @@ namespace YimMenu
 			m_ActiveCategory->Draw();
 		}
 	}
-
-	void Submenu::DrawSearchBar()
-	{
-		ImGui::PushItemWidth(260.0f);
-		ImGui::InputTextWithHint("##menuSearch", "Search options...", GetSearchBuffer(), GetSearchBufferSize());
-		ImGui::PopItemWidth();
-
-		// Keep the std::string in sync with the char buffer
-		m_SearchQuery = GetSearchBuffer();
-
-		if (HasActiveSearch())
-		{
-			ImGui::SameLine();
-			if (ImGui::SmallButton("Clear##menuSearchClear"))
-			{
-				ClearSearch();
-			}
-		}
-
-		ImGui::Spacing();
-	}
 }

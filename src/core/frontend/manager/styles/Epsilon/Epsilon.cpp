@@ -504,6 +504,15 @@ namespace YimMenu
 		}
 		ImGui::EndChild();
 
+		// Global search bar (always visible, full width)
+		if (!collapsed)
+		{
+			ImGui::PushItemWidth(-1.0f);
+			UIManager::DrawGlobalSearchBar();
+			ImGui::PopItemWidth();
+			ImGui::Spacing();
+		}
+
 		if (!collapsed)
 		{
 			const float bodyHeight = ImGui::GetContentRegionAvail().y;
@@ -625,39 +634,48 @@ namespace YimMenu
 					ImGui::NewLine();
 					ImGui::Spacing();
 
-					if (auto category = submenu->GetActiveCategory())
-					{
-						submenu->DrawSearchBar();
-
-						std::vector<CardData> cards;
-						std::vector<std::shared_ptr<UIItem>> loose;
-
-						// Build the item list to render: filtered by search query when active.
-						std::vector<std::shared_ptr<UIItem>> itemsToRender;
-						if (submenu->HasActiveSearch())
+						if (UIManager::HasActiveSearch())
 						{
-							const auto& query = submenu->GetSearchQuery();
-							for (auto& item : category->GetItems())
+							// Global search results: show matches across all submenus/categories
+							const auto& query = UIManager::GetGlobalSearchQuery();
+							auto results = UIManager::SearchAllItems(query);
+
+							ImGui::Text("Search results for \"%s\" (%d matches):", query.c_str(), (int)results.size());
+							ImGui::Spacing();
+
+							for (auto& result : results)
 							{
-								if (!item)
+								if (!result.submenu || !result.category || !result.item)
 									continue;
-								auto searchText = item->GetSearchText();
-								if (searchText.empty())
-									continue;
-								auto haystack = searchText;
-								auto needle = query;
-								std::transform(haystack.begin(), haystack.end(), haystack.begin(), [](unsigned char c) { return std::tolower(c); });
-								std::transform(needle.begin(), needle.end(), needle.begin(), [](unsigned char c) { return std::tolower(c); });
-								if (haystack.find(needle) != std::string::npos)
-									itemsToRender.push_back(item);
+
+								ImGui::PushID(result.item.get());
+
+								// Submenu > Category path
+								ImGui::TextDisabled("%s > %s", result.submenu->m_Name.c_str(), result.category->m_Name.c_str());
+								ImGui::SameLine();
+
+								// Clickable item name
+								if (ImGui::Selectable(result.matchText.c_str()))
+								{
+									UIManager::SetActiveSubmenu(result.submenu);
+									result.submenu->SetActiveCategory(result.category);
+									UIManager::ClearGlobalSearch();
+								}
+
+								ImGui::PopID();
+							}
+
+							if (results.empty())
+							{
+								ImGui::TextDisabled("No matches found.");
 							}
 						}
-						else
+						else if (auto category = submenu->GetActiveCategory())
 						{
-							itemsToRender = std::vector<std::shared_ptr<UIItem>>(category->GetItems().begin(), category->GetItems().end());
-						}
+							std::vector<CardData> cards;
+							std::vector<std::shared_ptr<UIItem>> loose;
 
-						for (auto& item : itemsToRender)
+							for (auto& item : category->GetItems())
 						{
 							if (!item)
 								continue;

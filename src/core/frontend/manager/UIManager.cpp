@@ -1,7 +1,10 @@
 #include "UIManager.hpp"
+#include "game/frontend/items/Items.hpp"
 #include "game/pointers/Pointers.hpp"
 #include "game/frontend/Menu.hpp"
 #include "core/commands/ListCommand.hpp"
+
+#include <cstring>
 
 namespace YimMenu::Features
 {
@@ -86,5 +89,67 @@ namespace YimMenu
 		}
 
 		return nullptr;
+	}
+
+	void UIManager::DrawGlobalSearchBar()
+	{
+		auto& inst = GetInstance();
+		ImGui::PushItemWidth(300.0f);
+		ImGui::InputTextWithHint("##globalMenuSearch", "Search all options...", inst.m_GlobalSearchBuffer, sizeof(inst.m_GlobalSearchBuffer));
+		ImGui::PopItemWidth();
+
+		// Keep the std::string in sync with the char buffer
+		inst.m_GlobalSearchQuery = inst.m_GlobalSearchBuffer;
+
+		if (!inst.m_GlobalSearchQuery.empty())
+		{
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Clear##globalMenuSearchClear"))
+			{
+				inst.m_GlobalSearchQuery.clear();
+				inst.m_GlobalSearchBuffer[0] = '\0';
+			}
+		}
+	}
+
+	std::vector<UIManager::SearchResult> UIManager::SearchAllItems(const std::string& query)
+	{
+		auto& inst = GetInstance();
+		std::vector<SearchResult> results;
+
+		std::string needle = query;
+		std::transform(needle.begin(), needle.end(), needle.begin(), [](unsigned char c) { return std::tolower(c); });
+
+		for (auto& submenu : inst.m_Submenus)
+		{
+			if (!submenu)
+				continue;
+
+			for (auto& category : submenu->m_Categories)
+			{
+				if (!category)
+					continue;
+
+				for (auto& item : category->GetItems())
+				{
+					if (!item)
+						continue;
+
+					auto text = item->GetSearchText();
+					if (text.empty())
+						continue;
+
+					auto haystack = text;
+					std::transform(haystack.begin(), haystack.end(), haystack.begin(), [](unsigned char c) { return std::tolower(c); });
+
+					if (haystack.find(needle) != std::string::npos)
+					{
+						results.push_back({submenu, category, item, text});
+					}
+				}
+			}
+		}
+
+		return results;
 	}
 }
