@@ -18,4 +18,9 @@ namespace YimMenu
 			}
 		}
 	}
+
+	std::string CollapsingHeaderItem::GetSearchText() const
+	{
+		return m_Name;
+	}
 }

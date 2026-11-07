@@ -53,4 +53,11 @@ namespace YimMenu
 
 		return m_Item->SetToggleState(state);
 	}
+
+	std::string ConditionalItem::GetSearchText() const
+	{
+		if (!m_Item)
+			return {};
+		return m_Item->GetSearchText();
+	}
 }

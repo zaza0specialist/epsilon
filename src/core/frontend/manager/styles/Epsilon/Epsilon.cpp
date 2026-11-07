@@ -627,10 +627,37 @@ namespace YimMenu
 
 					if (auto category = submenu->GetActiveCategory())
 					{
+						submenu->DrawSearchBar();
+
 						std::vector<CardData> cards;
 						std::vector<std::shared_ptr<UIItem>> loose;
 
-						for (auto& item : category->GetItems())
+						// Build the item list to render: filtered by search query when active.
+						std::vector<std::shared_ptr<UIItem>> itemsToRender;
+						if (submenu->HasActiveSearch())
+						{
+							const auto& query = submenu->GetSearchQuery();
+							for (auto& item : category->GetItems())
+							{
+								if (!item)
+									continue;
+								auto searchText = item->GetSearchText();
+								if (searchText.empty())
+									continue;
+								auto haystack = searchText;
+								auto needle = query;
+								std::transform(haystack.begin(), haystack.end(), haystack.begin(), [](unsigned char c) { return std::tolower(c); });
+								std::transform(needle.begin(), needle.end(), needle.begin(), [](unsigned char c) { return std::tolower(c); });
+								if (haystack.find(needle) != std::string::npos)
+									itemsToRender.push_back(item);
+							}
+						}
+						else
+						{
+							itemsToRender = std::vector<std::shared_ptr<UIItem>>(category->GetItems().begin(), category->GetItems().end());
+						}
+
+						for (auto& item : itemsToRender)
 						{
 							if (!item)
 								continue;

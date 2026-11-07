@@ -64,4 +64,11 @@ namespace YimMenu
 			ImGui::EndPopup();
 		}
 	}
+
+	std::string CommandItem::GetSearchText() const
+	{
+		if (!m_Command)
+			return {};
+		return m_LabelOverride.has_value() ? *m_LabelOverride : m_Command->GetLabel();
+	}
 }

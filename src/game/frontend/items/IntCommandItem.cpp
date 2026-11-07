@@ -40,4 +40,11 @@ namespace YimMenu
 			}
 		}
 	}
+
+	std::string IntCommandItem::GetSearchText() const
+	{
+		if (!m_Command)
+			return {};
+		return m_LabelOverride.has_value() ? *m_LabelOverride : m_Command->GetLabel();
+	}
 }

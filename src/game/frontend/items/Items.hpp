@@ -21,6 +21,7 @@ namespace YimMenu
 	public:
 		explicit Button(const std::string_view& Name, std::function<void()> OnClick, ImVec2 size = {0, 25}, const std::string_view& information = "Empty");
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		std::string_view m_Name;
@@ -34,6 +35,7 @@ namespace YimMenu
 	public:
 		explicit CommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		Command* m_Command;
@@ -45,6 +47,7 @@ namespace YimMenu
 	public:
 		explicit PlayerCommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		PlayerCommand* m_Command;
@@ -58,6 +61,7 @@ namespace YimMenu
 		void Draw() override;
 		std::optional<ToggleRow> GetToggleRow() const override;
 		bool SetToggleState(bool state) override;
+		std::string GetSearchText() const override;
 
 	private:
 		BoolCommand* m_Command;
@@ -69,6 +73,7 @@ namespace YimMenu
 	public:
 		explicit IntCommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt, bool use_slider = true);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		bool m_useSlider;
@@ -81,6 +86,7 @@ namespace YimMenu
 	public:
 		explicit FloatCommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt, bool use_slider = true);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		bool m_useSlider;
@@ -93,6 +99,7 @@ namespace YimMenu
 	public:
 		explicit Vector3CommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		Vector3Command* m_Command;
@@ -106,6 +113,7 @@ namespace YimMenu
 	public:
 		explicit ListCommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		ListCommand* m_Command;
@@ -127,6 +135,7 @@ namespace YimMenu
 		// visibility of the condition must not change how the group is laid out.
 		std::optional<UIItem::ToggleRow> GetToggleRow() const override;
 		bool SetToggleState(bool state) override;
+		std::string GetSearchText() const override;
 
 	private:
 		BoolCommand* m_Condition;
@@ -140,6 +149,7 @@ namespace YimMenu
 	public:
 		explicit ImGuiItem(std::function<void()> callback);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		std::function<void()> m_Callback;
@@ -171,6 +181,11 @@ namespace YimMenu
 			return m_Items;
 		}
 
+		std::string GetSearchText() const override
+		{
+			return m_Name;
+		}
+
 	private:
 		std::string m_Name;
 		int m_ItemsPerColumn;
@@ -182,6 +197,7 @@ namespace YimMenu
 	public:
 		explicit InputTextWithHint(std::string label, std::string hint, std::string* buf, int flags = ImGuiInputTextFlags_None, std::function<void()> cb = nullptr, ImGuiInputTextCallback inputCallback = nullptr);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		std::string m_Id;
@@ -197,6 +213,7 @@ namespace YimMenu
 	public:
 		explicit ColorCommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		ColorCommand* m_Command;
@@ -208,6 +225,7 @@ namespace YimMenu
 	public:
 		explicit StringCommandItem(joaat_t id, std::optional<std::string> label_override = std::nullopt);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 	private:
 		StringCommand* m_Command;
@@ -220,6 +238,7 @@ namespace YimMenu
 	public:
 		explicit TabItem(const std::string& name);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 		void AddItem(std::shared_ptr<UIItem>&& item)
 		{
@@ -236,6 +255,7 @@ namespace YimMenu
 	public:
 		explicit TabBarItem(const std::string& id);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 		void AddItem(std::shared_ptr<TabItem>&& tab)
 		{
@@ -252,6 +272,7 @@ namespace YimMenu
 	public:
 		explicit CollapsingHeaderItem(const std::string& name);
 		void Draw() override;
+		std::string GetSearchText() const override;
 
 		void AddItem(std::shared_ptr<UIItem>&& item)
 		{

@@ -22,6 +22,12 @@ namespace YimMenu
 			return true;
 		}
 
+		// Text used for menu search matching. Defaults to empty (unsearchable).
+		virtual std::string GetSearchText() const
+		{
+			return std::string{};
+		}
+
 		// Only toggle-backed items return a row here. Styles that lay out their own
 		// rows use this to render a label/description/switch without losing the command.
 		virtual std::optional<ToggleRow> GetToggleRow() const

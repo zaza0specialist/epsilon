@@ -25,4 +25,9 @@ namespace YimMenu
 			}
 		}
 	}
+
+	std::string InputTextWithHint::GetSearchText() const
+	{
+		return {};
+	}
 }

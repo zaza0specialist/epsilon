@@ -23,4 +23,9 @@ namespace YimMenu
 			}
 		}
 	}
+
+	std::string Button::GetSearchText() const
+	{
+		return std::string(m_Name);
+	}
 }

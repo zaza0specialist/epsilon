@@ -12,4 +12,9 @@ namespace YimMenu
 	{
 		m_Callback();
 	}
+
+	std::string ImGuiItem::GetSearchText() const
+	{
+		return {};
+	}
 }

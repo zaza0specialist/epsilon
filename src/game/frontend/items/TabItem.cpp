@@ -19,4 +19,9 @@ namespace YimMenu
 			ImGui::EndTabItem();
 		}
 	}
+
+	std::string TabItem::GetSearchText() const
+	{
+		return m_Name;
+	}
 }

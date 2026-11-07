@@ -119,4 +119,11 @@ namespace YimMenu
 
 		ImGui::PopID();
 	}
+
+	std::string Vector3CommandItem::GetSearchText() const
+	{
+		if (!m_Command)
+			return {};
+		return m_LabelOverride.has_value() ? *m_LabelOverride : m_Command->GetLabel();
+	}
 }
