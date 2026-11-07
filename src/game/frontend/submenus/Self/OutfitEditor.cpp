@@ -4,12 +4,122 @@
 #include "game/backend/Outfit.hpp"
 #include "core/frontend/Notifications.hpp"
 #include "game/backend/Self.hpp"
+#include "game/features/recovery/Wardrobe.hpp"
 #include "game/gta/Natives.hpp"
 #include "core/util/Strings.hpp"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include <cstdio>
+#include <cstring>
+
 namespace YimMenu
 {
+	// Color tokens usable inside outfit/slot names: [RED]My [BLUE]Outfit
+	static const std::vector<std::pair<const char*, ImVec4>>& GetOutfitTokens()
+	{
+		static const std::vector<std::pair<const char*, ImVec4>> tokens = {
+			{"RED",      ImVec4(1.00f, 0.00f, 0.00f, 1.0f)},
+			{"BLUE",     ImVec4(0.25f, 0.45f, 1.00f, 1.0f)},
+			{"GREEN",    ImVec4(0.20f, 0.90f, 0.35f, 1.0f)},
+			{"YELLOW",   ImVec4(1.00f, 0.85f, 0.20f, 1.0f)},
+			{"ORANGE",   ImVec4(1.00f, 0.55f, 0.10f, 1.0f)},
+			{"PINK",     ImVec4(1.00f, 0.45f, 0.75f, 1.0f)},
+			{"PURPLE",   ImVec4(0.70f, 0.35f, 1.00f, 1.0f)},
+			{"DARK",     ImVec4(0.30f, 0.30f, 0.30f, 1.0f)},
+			{"GRAY",     ImVec4(0.55f, 0.55f, 0.55f, 1.0f)},
+			{"DARKGRAY", ImVec4(0.38f, 0.38f, 0.38f, 1.0f)},
+			{"LIGHT",    ImVec4(0.90f, 0.90f, 0.90f, 1.0f)},
+			{"WHITE",    ImVec4(1.00f, 1.00f, 1.00f, 1.0f)},
+			{"BLACK",    ImVec4(0.15f, 0.15f, 0.15f, 1.0f)},
+		};
+		return tokens;
+	}
+
+	static void DrawTokenizedText(const std::string& text)
+	{
+		size_t pos = 0;
+		while (pos < text.size())
+		{
+			auto start = text.find('[', pos);
+			if (start == std::string::npos)
+			{
+				ImGui::TextUnformatted(text.substr(pos).c_str());
+				break;
+			}
+
+			if (start > pos)
+			{
+				ImGui::TextUnformatted(text.substr(pos, start - pos).c_str());
+				ImGui::SameLine();
+			}
+
+			auto end = text.find(']', start);
+			if (end == std::string::npos)
+			{
+				ImGui::TextUnformatted(text.substr(pos).c_str());
+				break;
+			}
+
+			std::string token = text.substr(start + 1, end - start - 1);
+			bool found = false;
+			for (const auto& [name, color] : GetOutfitTokens())
+			{
+				if (token == name)
+				{
+					ImGui::TextColored(color, "%s", name);
+					ImGui::SameLine();
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				std::string full = "[" + token + "]";
+				ImGui::TextUnformatted(full.c_str());
+				ImGui::SameLine();
+			}
+
+			pos = end + 1;
+		}
+	}
+
+	// Row of colored token buttons that append their token to buf (the selected slot's name).
+	static void RenderTokenButtons(char* buf, size_t bufSize)
+	{
+		ImGui::TextDisabled("Color tokens");
+		for (size_t i = 0; i < GetOutfitTokens().size(); i++)
+		{
+			const auto& [name, color] = GetOutfitTokens()[i];
+			if (i % 7 != 0)
+				ImGui::SameLine();
+
+			ImGui::PushStyleColor(ImGuiCol_Text, color);
+			std::string label = std::string("[") + name + "]##tok" + std::to_string(i);
+			if (ImGui::SmallButton(label.c_str()))
+			{
+				std::string token   = std::string("[") + name + "]";
+				std::string current = buf;
+
+				// collapse duplicate adjacent tokens instead of stacking them
+				if (current.size() >= token.size() && current.compare(current.size() - token.size(), token.size(), token) == 0)
+					current.erase(current.size() - token.size());
+
+				while (!current.empty() && current.back() == ' ')
+					current.pop_back();
+
+				if (current.size() + token.size() + 2 < bufSize)
+				{
+					if (!current.empty())
+						current += " ";
+					current += token;
+					std::snprintf(buf, bufSize, "%s", current.c_str());
+				}
+			}
+			ImGui::PopStyleColor();
+		}
+	}
+
 	class OutfitEditorMenu
 	{
 		Outfit::OutfitComponents components{};
@@ -234,6 +344,85 @@ namespace YimMenu
 			}
 			ImGui::EndGroup();
 		}
+
+		// Quick-save outfit slots with token-colored names
+		void RenderWardrobeSlots()
+		{
+			auto& w = Wardrobe::GetInstance();
+
+			static char editBuf[21][64]{};
+			static int openSlot = -1;
+
+			for (int i = 0; i < 21; i++)
+			{
+				ImGui::PushID(i);
+				auto& slot = w.GetSlot(i);
+
+				// slot name, tokens rendered in color
+				ImGui::SetNextItemWidth(220);
+				if (slot.name.empty())
+					ImGui::TextDisabled("Slot %02d", i + 1);
+				else
+					DrawTokenizedText(slot.name);
+
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Edit"))
+				{
+					openSlot  = i;
+					auto name = slot.name;
+					std::snprintf(editBuf[i], sizeof(editBuf[i]), "%s", name.c_str());
+				}
+
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Save"))
+					FiberPool::Push([&w, i] { w.SaveSlot(i); });
+
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Load"))
+					FiberPool::Push([&w, i] { w.ApplySlot(i); });
+
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Clear"))
+					FiberPool::Push([&w, i] { w.ClearSlot(i); });
+
+				ImGui::SameLine();
+				if (slot.hasData)
+					ImGui::TextColored(ImVec4(0.30f, 0.85f, 0.35f, 1.0f), "saved");
+				else
+					ImGui::TextDisabled("empty");
+
+				// edit popup: name field + color token buttons (ID is scoped to this slot)
+				if (openSlot == i)
+				{
+					ImGui::OpenPopup("Edit Slot Name");
+					openSlot = -1;
+				}
+
+				if (ImGui::BeginPopup("Edit Slot Name"))
+				{
+					ImGui::Text("Slot %02d name", i + 1);
+					ImGui::SetNextItemWidth(320);
+					ImGui::InputText("##slotname", editBuf[i], sizeof(editBuf[i]));
+
+					ImGui::Spacing();
+					RenderTokenButtons(editBuf[i], sizeof(editBuf[i]));
+
+					ImGui::Spacing();
+					if (ImGui::Button("Apply Name"))
+					{
+						w.SetSlotName(i, editBuf[i]);
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel"))
+						ImGui::CloseCurrentPopup();
+
+					ImGui::EndPopup();
+				}
+
+				ImGui::PopID();
+			}
+		}
 	};
 
 	std::shared_ptr<Category> CreateOutfitsMenu()
@@ -269,6 +458,15 @@ namespace YimMenu
 			editor.RenderOutfitList();
 			ImGui::SameLine();
 			editor.RenderOutfitListControls();
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			ImGui::TextDisabled("Quick Slots");
+			ImGui::Text("Click Edit on a slot, then use the color buttons to tag its name.");
+			ImGui::Spacing();
+			editor.RenderWardrobeSlots();
 		}));
 
 		return category;

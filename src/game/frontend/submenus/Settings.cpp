@@ -4,7 +4,6 @@
 #include "core/commands/HotkeySystem.hpp"
 #include "core/commands/LoopedCommand.hpp"
 #include "game/backend/Self.hpp"
-#include "game/features/recovery/Wardrobe.hpp"
 #include "game/frontend/items/Items.hpp"
 #include "game/frontend/items/DrawHotkey.hpp"
 #include "game/frontend/submenus/Settings/LuaScripts.hpp"
@@ -12,63 +11,6 @@
 
 namespace YimMenu::Submenus
 {
-	static void DrawTokenizedText(const std::string& text) {
-		static const std::vector<std::pair<const char*, ImVec4>> tokens = {
-			{"RED",    ImVec4(1.0f, 0.0f, 0.0f, 1.0f)},
-			{"BLUE",   ImVec4(0.0f, 0.0f, 1.0f, 1.0f)},
-			{"DARK",   ImVec4(0.2f, 0.2f, 0.2f, 1.0f)},
-			{"GREEN",  ImVec4(0.0f, 1.0f, 0.0f, 1.0f)},
-			{"YELLOW", ImVec4(1.0f, 1.0f, 0.0f, 1.0f)},
-			{"PINK",   ImVec4(1.0f, 0.5f, 0.8f, 1.0f)},
-			{"PURPLE", ImVec4(1.0f, 0.0f, 1.0f, 1.0f)},
-			{"ORANGE", ImVec4(1.0f, 0.5f, 0.0f, 1.0f)},
-			{"GRAY",   ImVec4(0.5f, 0.5f, 0.5f, 1.0f)},
-			{"DARKGRAY", ImVec4(0.3f, 0.3f, 0.3f, 1.0f)},
-			{"BLACK",  ImVec4(0.0f, 0.0f, 0.0f, 1.0f)},
-			{"WHITE",  ImVec4(1.0f, 1.0f, 1.0f, 1.0f)},
-			{"LIGHT",  ImVec4(0.9f, 0.9f, 0.9f, 1.0f)},
-		};
-
-		size_t pos = 0;
-		while (pos < text.size()) {
-			auto start = text.find('[', pos);
-			if (start == std::string::npos) {
-				ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_Text), "%s", text.substr(pos).c_str());
-				break;
-			}
-
-			if (start > pos) {
-				ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_Text), "%s", text.substr(pos, start - pos).c_str());
-				ImGui::SameLine();
-			}
-
-			auto end = text.find(']', start);
-			if (end == std::string::npos) {
-				ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_Text), "%s", text.substr(pos).c_str());
-				break;
-			}
-
-			std::string token = text.substr(start + 1, end - start - 1);
-			bool found = false;
-			for (const auto& [name, color] : tokens) {
-				if (token == name) {
-					ImGui::TextColored(color, "%s", name);
-					ImGui::SameLine();
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				std::string full = "[" + token + "]";
-				ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_Text), "%s", full.c_str());
-				ImGui::SameLine();
-			}
-
-			pos = end + 1;
-		}
-	}
-
 	// TODO: refactor this
 	static void Hotkeys()
 	{
@@ -196,75 +138,6 @@ namespace YimMenu::Submenus
 		game->AddItem(pedEsp);
 		game->AddItem(objectEsp);
 
-		// Outfits
-		auto outfits = std::make_shared<Category>("Outfits");
-		outfits->AddItem(std::make_shared<ImGuiItem>([] {
-			auto& w = YimMenu::Wardrobe::GetInstance();
-			
-			ImGui::Text("Outfit Slots (21)");
-			ImGui::Spacing();
-			
-			static char editBuf[21][64] = {};
-			static int editSlot = -1;
-			
-			for (int i = 0; i < 21; i++)
-			{
-				ImGui::PushID(i);
-				auto& slot = w.GetSlot(i);
-				
-				DrawTokenizedText(slot.name);
-				ImGui::SameLine();
-				
-				std::string editLabel = "Edit##edit" + std::to_string(i);
-				if (ImGui::Button(editLabel.c_str())) {
-					editSlot = i;
-					strncpy(editBuf[i], slot.name.c_str(), sizeof(editBuf[i]) - 1);
-					editBuf[i][sizeof(editBuf[i]) - 1] = '\0';
-				}
-				
-				ImGui::SameLine();
-				if (ImGui::Button("SAVE")) {
-					w.SaveSlot(i);
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("LOAD")) {
-					w.ApplySlot(i);
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("CLEAR")) {
-					w.ClearSlot(i);
-				}
-				
-				ImGui::SameLine();
-				if (slot.hasData) {
-					ImGui::TextColored(ImVec4(0, 1, 0, 1), "Saved");
-				} else {
-					ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1), "Empty");
-				}
-				
-				ImGui::PopID();
-				
-				// Edit popup (must be called every frame while open)
-				if (editSlot == i) {
-					ImGui::OpenPopup(("Edit Name##" + std::to_string(i)).c_str());
-					editSlot = -1;
-				}
-				
-				if (ImGui::BeginPopup(("Edit Name##" + std::to_string(i)).c_str())) {
-					ImGui::InputText("##name", editBuf[i], sizeof(editBuf[i]));
-					if (ImGui::Button("Save")) {
-						w.SetSlotName(i, editBuf[i]);
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Cancel")) {
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::EndPopup();
-				}
-			}
-		}));
-
 		gui->AddItem(uiStyle);
 		gui->AddItem(overlay);
 		gui->AddItem(chat);
@@ -272,7 +145,6 @@ namespace YimMenu::Submenus
 		AddCategory(std::move(hotkeys));
 		AddCategory(std::move(gui));
 		AddCategory(std::move(game));
-		AddCategory(std::move(outfits));
 		AddCategory(std::move(about));
 		AddCategory(DrawGUISettingsMenu());
 		AddCategory(BuildLuaScriptsMenu());
