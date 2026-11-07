@@ -482,6 +482,7 @@ namespace YimMenu
 
 			ImGui::TextDisabled("Quick Slots");
 			ImGui::Text("Click Edit on a slot, then use the color buttons to tag its name.");
+			ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.1f, 1.0f), "Work in progress — syncing names to the game wardrobe may not work on all versions.");
 			ImGui::Spacing();
 			editor.RenderWardrobeSlots();
 		}));
