@@ -14,23 +14,24 @@
 
 namespace YimMenu
 {
-	// Color tokens usable inside outfit/slot names: [RED]My [BLUE]Outfit
+	// Real GTA V text formatting tokens (from GTA V Text Formatting spec):
+	// ~r~ = Red, ~o~ = Orange, ~y~ = Yellow, ~g~ = Green, ~b~ = Blue,
+	// ~q~ = Pink, ~p~ = Purple, ~h~ = White, ~c~ = Grey, ~m~ = Darker Grey,
+	// ~u~ = Black, ~s~ = Reset
 	static const std::vector<std::pair<const char*, ImVec4>>& GetOutfitTokens()
 	{
 		static const std::vector<std::pair<const char*, ImVec4>> tokens = {
-			{"RED",      ImVec4(1.00f, 0.00f, 0.00f, 1.0f)},
-			{"BLUE",     ImVec4(0.25f, 0.45f, 1.00f, 1.0f)},
-			{"GREEN",    ImVec4(0.20f, 0.90f, 0.35f, 1.0f)},
-			{"YELLOW",   ImVec4(1.00f, 0.85f, 0.20f, 1.0f)},
-			{"ORANGE",   ImVec4(1.00f, 0.55f, 0.10f, 1.0f)},
-			{"PINK",     ImVec4(1.00f, 0.45f, 0.75f, 1.0f)},
-			{"PURPLE",   ImVec4(0.70f, 0.35f, 1.00f, 1.0f)},
-			{"DARK",     ImVec4(0.30f, 0.30f, 0.30f, 1.0f)},
-			{"GRAY",     ImVec4(0.55f, 0.55f, 0.55f, 1.0f)},
-			{"DARKGRAY", ImVec4(0.38f, 0.38f, 0.38f, 1.0f)},
-			{"LIGHT",    ImVec4(0.90f, 0.90f, 0.90f, 1.0f)},
-			{"WHITE",    ImVec4(1.00f, 1.00f, 1.00f, 1.0f)},
-			{"BLACK",    ImVec4(0.15f, 0.15f, 0.15f, 1.0f)},
+			{"r",   ImVec4(1.00f, 0.00f, 0.00f, 1.0f)}, // ~r~ Red
+			{"o",   ImVec4(1.00f, 0.55f, 0.10f, 1.0f)}, // ~o~ Orange
+			{"y",   ImVec4(1.00f, 0.85f, 0.20f, 1.0f)}, // ~y~ Yellow
+			{"g",   ImVec4(0.20f, 0.90f, 0.35f, 1.0f)}, // ~g~ Green
+			{"b",   ImVec4(0.25f, 0.45f, 1.00f, 1.0f)}, // ~b~ Blue
+			{"q",   ImVec4(1.00f, 0.45f, 0.75f, 1.0f)}, // ~q~ Pink
+			{"p",   ImVec4(0.70f, 0.35f, 1.00f, 1.0f)}, // ~p~ Purple
+			{"h",   ImVec4(1.00f, 1.00f, 1.00f, 1.0f)}, // ~h~ White
+			{"c",   ImVec4(0.55f, 0.55f, 0.55f, 1.0f)}, // ~c~ Grey
+			{"m",   ImVec4(0.38f, 0.38f, 0.38f, 1.0f)}, // ~m~ Darker Grey
+			{"u",   ImVec4(0.15f, 0.15f, 0.15f, 1.0f)}, // ~u~ Black
 		};
 		return tokens;
 	}
@@ -40,7 +41,7 @@ namespace YimMenu
 		size_t pos = 0;
 		while (pos < text.size())
 		{
-			auto start = text.find('[', pos);
+			auto start = text.find('~', pos);
 			if (start == std::string::npos)
 			{
 				ImGui::TextUnformatted(text.substr(pos).c_str());
@@ -53,7 +54,7 @@ namespace YimMenu
 				ImGui::SameLine();
 			}
 
-			auto end = text.find(']', start);
+			auto end = text.find('~', start + 1);
 			if (end == std::string::npos)
 			{
 				ImGui::TextUnformatted(text.substr(pos).c_str());
@@ -75,7 +76,7 @@ namespace YimMenu
 
 			if (!found)
 			{
-				std::string full = "[" + token + "]";
+				std::string full = "~" + token + "~";
 				ImGui::TextUnformatted(full.c_str());
 				ImGui::SameLine();
 			}
@@ -84,21 +85,21 @@ namespace YimMenu
 		}
 	}
 
-	// Row of colored token buttons that append their token to buf (the selected slot's name).
+	// Row of colored token buttons that append their GTA token (~r~, ~g~, ...) to buf.
 	static void RenderTokenButtons(char* buf, size_t bufSize)
 	{
-		ImGui::TextDisabled("Color tokens");
+		ImGui::TextDisabled("Color tokens (~x~)");
 		for (size_t i = 0; i < GetOutfitTokens().size(); i++)
 		{
 			const auto& [name, color] = GetOutfitTokens()[i];
-			if (i % 7 != 0)
+			if (i % 6 != 0)
 				ImGui::SameLine();
 
 			ImGui::PushStyleColor(ImGuiCol_Text, color);
-			std::string label = std::string("[") + name + "]##tok" + std::to_string(i);
+			std::string label = std::string("~") + name + "~##tok" + std::to_string(i);
 			if (ImGui::SmallButton(label.c_str()))
 			{
-				std::string token   = std::string("[") + name + "]";
+				std::string token   = std::string("~") + name + "~";
 				std::string current = buf;
 
 				// collapse duplicate adjacent tokens instead of stacking them
