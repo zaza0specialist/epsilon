@@ -86,6 +86,12 @@ A leave with **no protection triggers** means nothing on our side interfered wit
 - **FSL is no longer usable.** It used to move account saves off the Rockstar servers, but it no longer functions. Progress made with it is only visible while it is active.
 - **Public sessions desync every few minutes.** Without a working BattlEye bypass, legitimate hosts eventually remove a modified client.
 
+## Community
+
+Join our Discord server: https://discord.gg/QE8WPT2HC
+
+> ⚠️ **Note:** This invite link expires **30 days from November 12, 2026 (December 12, 2026)**. If the link has expired, open an issue on GitHub to request a new one.
+
 ## Licence
 
 GNU General Public License v2.0. See [LICENSE](LICENSE).
