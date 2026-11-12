@@ -133,7 +133,8 @@ virtual void OnDisable() override
 			if (!thread)
 				return;
 
-			*ScriptLocal(thread, prize_wheel_win_state + prize_wheel_prize_off).As<int*>() = _CasinoLuckyWheelPrize.GetState();
+			int selectedIndex = _CasinoLuckyWheelPrize.GetState();
+			*ScriptLocal(thread, prize_wheel_win_state + prize_wheel_prize_off).As<int*>() = casinoLuckyWheelPrizeList[selectedIndex].first;
 			*ScriptLocal(thread, prize_wheel_win_state + prize_wheel_state_off).As<int*>() = prize_wheel_trigger_state;
 		}
 	};
