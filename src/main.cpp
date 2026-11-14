@@ -41,6 +41,14 @@ namespace YimMenu
 		NetTrace::Init();
 
 		// baby-blue ascii art splash for the console window
+		// Enable Virtual Terminal Processing so the ANSI colour codes below render on Windows
+		if (auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE); hConsole != INVALID_HANDLE_VALUE)
+		{
+			DWORD mode = 0;
+			if (GetConsoleMode(hConsole, &mode))
+				SetConsoleMode(hConsole, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+		}
+
 		std::cout << "\x1b[38;2;140;174;217m";
 		std::cout << R"(__/\\\\\\\\\\\\\\\___________________________________/\\\\\\________________________________       
  _\/\\\///////////___________________________________\////\\\________________________________       
